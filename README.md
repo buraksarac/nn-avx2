@@ -51,7 +51,7 @@ USAGE:
 
 -st	Save thetas (prediction result)(0 for disable 1 for enable default 1), if ps is low this option might cause lot of saving on weight snapshots.
 
--test	Test percentage, i.e. for 1000 row of data, 10 will result, 900 of row for training and 100 for test
+-test	Test percentage, i.e. for 1000 row of data, -test 10 will result: 900 of row for training and 100 for test
 
 -ps	Prediction step, has to be power of 2, for long running tasks you can enable this and -st parameter. I.e. -ps 16 will result every 16 iteration will run prediction against test and if -st 1 then also weights will be saved for this prediction, that later you can load back
 ```
