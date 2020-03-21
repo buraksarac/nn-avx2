@@ -9,7 +9,7 @@ cd Release
 make clean
 make all -j32
 ```
-Running with example data (5000 20x20 digit image with float values between 0-1 and each image contains picture of numbers from 0 to 9):
+Running with example data (5000 20x20 digit images, each image contains picture of numbers from 0 to 9):
 ```
 cd Release
 ./nn-avx2 -x ../xShuffled.dat -y ../yShuffled.dat -r 5000 -c 400 -n 10 -t 1 -h 25 -i 1000 -l 0.0025 -j $(nproc) -test 15 -ps 64
