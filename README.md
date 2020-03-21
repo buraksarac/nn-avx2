@@ -19,7 +19,7 @@ USAGE:
 
 --help	This help info
 
--x	X(input) file path
+-x	X(input) file path, space separated
 
 -y	Y(output, expected result) file path
 
@@ -29,7 +29,7 @@ USAGE:
 
 -n	Number of labels in Y file (how many expected result, should be a sequence starting from 1)
 
--t	Total hidden layer count (excluding input and output)
+-t	Total hidden layer count (excluding input and output), currently only 1, 
 
 -h	Hidden layer size (excluding bias unit)
 
@@ -37,7 +37,7 @@ USAGE:
 
 -i	Number of iteration for training
 
--l	Lambda value
+-l	Lambda value, between 0-1
 
 -f	Scale inputs for featured list, 0 or 1, optional, default 0)
 
@@ -49,7 +49,7 @@ USAGE:
 -lt	Load previously saved thetas (prediction result)
 	(0 for disable 1 for enable default 0) (-tp needs to be set)
 
--st	Save thetas (prediction result)(0 for disable 1 for enable default 1)
+-st	Save thetas (prediction result)(0 for disable 1 for enable default 1), if ps is low this option might cause lot of saving on weight snapshots.
 
 -test	Test percentage, i.e. for 1000 row of data, 10 will result, 900 of row for training and 100 for test
 
