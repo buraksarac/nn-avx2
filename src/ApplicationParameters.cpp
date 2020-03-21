@@ -28,24 +28,26 @@ void ApplicationParameters::printHelp() {
 	printf("\nUSAGE:\n");
 	printf("\n--help\tThis help info\n");
 	printf("\n-x\tX(input) file path\n");
-	printf("\n-y\tY(expected result) file path\n");
+	printf("\n-y\tY(output, expected result) file path\n");
 	printf("\n-r\tRowcount of X or Y file (should be equal)\n");
 	printf("\n-c\tColumn count of X file (each row should have same count)\n");
-	printf("\n-n\tNumber of labels in Y file (how many expected result)\n");
-	printf("\n-t\tTotal layer count for neural network(including X)\n");
+	printf("\n-n\tNumber of labels in Y file (how many expected result, should be a sequence starting from 1)\n");
+	printf("\n-t\tTotal hidden layer count (excluding input and output)\n");
 	printf("\n-h\tHidden layer size (excluding bias unit)\n");
 	printf("\n-j\tNumber of cores(threads) on host pc\n");
 	printf("\n-i\tNumber of iteration for training\n");
 	printf("\n-l\tLambda value\n");
-	printf("\n-f\tScale inputs for featured list\n");
+	printf("\n-f\tScale inputs for featured list, 0 or 1, optional, default 0)\n");
 	printf("\n-p\tDo prediction for each input after training complete (0 for disable 1 for enable default 1)\n");
 	printf("\n-tp\tTheta path. If you have previously saved a prediction result you can continue"
 			"\n\tfrom this result by loading from file path. (-lt value should be 1)\n");
 	printf("\n-lt\tLoad previously saved thetas (prediction result)"
 			"\n\t(0 for disable 1 for enable default 0) (-tp needs to be set)\n");
 	printf("\n-st\tSave thetas (prediction result)(0 for disable 1 for enable default 1)\n");
+	printf("\n-test\tTest percentage, i.e. for 1000 row of data, 10 will result, 900 of row for training and 100 for test\n");
+	printf(
+			"\n-ps\tPrediction step, has to be power of 2, for long running tasks you can enable this and -st parameter. I.e. -ps 16 will result every 16 iteration will run prediction against test and if -st 1 then also weights will be saved for this prediction, that later you can load back\n");
 	printf("\n");
-	printf("\nPlease see http://www.u-db.org for more details\n");
 }
 void ApplicationParameters::validateInputs(int argc, char **argv) {
 
