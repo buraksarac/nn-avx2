@@ -1,7 +1,7 @@
 # nn-avx2
 Neural Network implementation (Back/Forward)with avx2 and fma instructions. This is a full batch app, so everything loaded into memory. Currently best performs on single hidden layer (input + 1 hidden + output) yet still hidden nodes counts are configurable.
 
-This is my C application I have used for kaggle competitions. It uses clang,pthread and -mfma -mavx2 instructions. You might want to update hardcoded cpu architecture on related files (find . -type f -exec grep -l 'znver1' {} \;) 
+This is my C application I have used for kaggle competitions. Input layer needs to be space separated, see xShuffled.dat and yShuffled.day for example. It uses clang,pthread and -mfma -mavx2 instructions. You might want to update hardcoded cpu architecture on related files (find . -type f -exec grep -l 'znver1' {} \;) 
 
 Building:
 ```
