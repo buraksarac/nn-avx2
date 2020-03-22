@@ -23,7 +23,7 @@
 #include <math.h>
 #include <limits>
 #include "avx2.h"
-
+#include <thread>
 #include <sys/time.h>
 using namespace std;
 
@@ -33,12 +33,12 @@ static const float UPPER_BOUND = 1.0f - (LOWER_BOUND * 2);
 static const __m256 ones = _mm256_set1_ps(1);
 static const __m256 zeros = _mm256_set1_ps(0);
 #define E exp(1.0)
+static const unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
 NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCount, int *nCounts, int nOfLabels, int yWeight, int xColumnSize, float l) {
 
 	deltas = 0;
 	lambda = l;
 	numberOfThreads = noThreads;
-	threadLast = numberOfThreads - 1;
 	xList = alist;
 	yList = blist;
 	xColumns = xColumnSize;
@@ -63,11 +63,16 @@ NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCou
 	yf = 1.0f / ySizefloat;
 	lyf = lambda / ySizefloat;
 	tyf = lambda / (2.0f * ySizefloat);
+
+	numberOfThreads = numberOfThreads > concurentThreadsSupported ? concurentThreadsSupported : numberOfThreads;
 	pDeltas = (float**) malloc(sizeof(float*) * numberOfThreads);
 	stDatas = (struct stData*) malloc(sizeof(struct stData) * numberOfThreads);
-	threads = (pthread_t*) malloc(sizeof(pthread_t) * threadLast);
+	threads = (pthread_t*) malloc(sizeof(pthread_t) * numberOfThreads - 1);
 	loops = (struct loop*) malloc(sizeof(struct loop) * numberOfThreads);
-	for (int t = 0; t < numberOfThreads; ++t) {
+	threadBarrier = concurentThreadsSupported - numberOfThreads;
+
+	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
+		int t = i - threadBarrier;
 		loops[t].loopMin = (int) ((long) (t + 0) * (long) (ySize) / (long) numberOfThreads);
 		loops[t].loopMax = (int) ((long) (t + 1) * (long) (ySize) / (long) numberOfThreads);
 	}
@@ -350,8 +355,9 @@ GradientParameter* NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 //create params for each thread
 
 	float cost = 0.0f;
-	for (int t = 0; t < numberOfThreads; ++t) {
-		int isLast = t == (numberOfThreads - 1);
+	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
+		int t = i - threadBarrier;
+		int isMain = t == 0;
 		stDatas[t].deltas = &(pDeltas[t][0]);
 		stDatas[t].xList = xList;
 		stDatas[t].ySizeF = yf;
@@ -370,22 +376,25 @@ GradientParameter* NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		stDatas[t].eLayerCache = eLayerCache;
 		stDatas[t].numLabels = numberOfLabels;
 		stDatas[t].cost = 0.0f;
-		stDatas[t].isLast = isLast;
+		stDatas[t].isLast = isMain;
 		stDatas[t].loopMin = loops[t].loopMin;
 		stDatas[t].loopMax = loops[t].loopMax;
 
-		if (!isLast) {
-			pthread_create(&threads[t], NULL, calculateBackCost, (void*) &(stDatas[t]));
-
-		} else {
+		if (isMain) {
 			//if its last handle by main thread
 			this->calculateBackCost(&stDatas[t]);
+		} else {
+			pthread_create(&threads[t], NULL, calculateBackCost, (void*) &(stDatas[t]));
+			cpu_set_t cpuset;
+			CPU_ZERO(&cpuset);
+			CPU_SET(i, &cpuset);
+			pthread_setaffinity_np(threads[t], sizeof(cpu_set_t), &cpuset);
+
 		}
 
 	}
-
-//wait for other threads
-	for (int t = 0; t < numberOfThreads - 1; t++) {
+	for (int i = concurentThreadsSupported - 1; i > threadBarrier; i--) {
+		int t = i - threadBarrier;
 		pthread_join(threads[t], NULL);
 	}
 

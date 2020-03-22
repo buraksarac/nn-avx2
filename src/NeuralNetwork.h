@@ -81,7 +81,7 @@ private:
 	float **pDeltas;
 	struct stData *stDatas;
 	pthread_t *threads;
-	int threadLast;
+	int threadBarrier;
 	struct loop *loops;
 public:
 	NeuralNetwork(int noThreads, float *alist, float *blist, int layerCount, int *neuronCounts, int numberOfLabels, int ySize, int xColumnSize, float l);
