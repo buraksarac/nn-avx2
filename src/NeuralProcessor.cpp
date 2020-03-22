@@ -146,7 +146,6 @@ int main(int argc, char **argv) {
 	free(yTemp);
 	delete[] neuronCount;
 	delete gd;
-	params->~ApplicationParameters();
 	delete params;
 	printf("\nFinish!\n");
 }
