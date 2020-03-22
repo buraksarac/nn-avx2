@@ -504,12 +504,12 @@ float* NeuralNetwork::forwardPropogate(int aListIndex, float *tList, float *xLis
 	for (int l = 0; l < layerCount; l++) {
 		int lPrev = l - 1;
 		int previousLayer = nLayerCache[l];
-		bool isLast = l == layerCount - 1;
+		bool isLast = l == (layerCount - 1);
 		int neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
 		for (int j = 0; j < neuronSize; j++) {
 			int jPrev = j - 1;
 			int row = previousLayer + j;
-			neurons[row] = 0;
+			neurons[row] = .0f;
 
 			if (j == 0 && !isLast) {
 				neurons[row] = 1;
@@ -519,8 +519,7 @@ float* NeuralNetwork::forwardPropogate(int aListIndex, float *tList, float *xLis
 				float *t = &(tList[(dMatrixDimensions[lPrev][1] * (isLast ? j : jPrev)) + dLayerCache[lPrev]]);
 				float *n = &(neurons[nLayerCache[lPrev]]);
 				int nCounts = neuronCounts[lPrev] + 1;
-				int dif = nCounts & 7;
-				int siz = nCounts - dif;
+				int siz = nCounts - (nCounts & 7);
 				for (int k = 0; k < siz; k = k + 8) {
 					_mulAdd(&t[k], &n[k], &neurons[row]);
 				}
@@ -528,7 +527,7 @@ float* NeuralNetwork::forwardPropogate(int aListIndex, float *tList, float *xLis
 					neurons[row] += t[k] * n[k];
 				}
 
-				neurons[row] = (UPPER_BOUND / (UPPER_BOUND + pow(E, -neurons[row])));
+				neurons[row] = (UPPER_BOUND / (1 + pow(E, -neurons[row]))) + LOWER_BOUND;
 			}
 		}
 	}
@@ -542,12 +541,12 @@ float* NeuralNetwork::forwardPropogate(float *tList, float *xList) {
 	for (int l = 0; l < layerCount; l++) {
 		int lPrev = l - 1;
 		int previousLayer = nLayerCache[l];
-		bool isLast = l == layerCount - 1;
+		bool isLast = l == (layerCount - 1);
 		int neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
 		for (int j = 0; j < neuronSize; j++) {
 			int jPrev = j - 1;
 			int row = previousLayer + j;
-			neurons[row] = 0;
+			neurons[row] = .0f;
 
 			if (j == 0 && !isLast) {
 				neurons[row] = 1;
@@ -557,8 +556,7 @@ float* NeuralNetwork::forwardPropogate(float *tList, float *xList) {
 				float *t = &(tList[(dMatrixDimensions[lPrev][1] * (isLast ? j : jPrev)) + dLayerCache[lPrev]]);
 				float *n = &(neurons[nLayerCache[lPrev]]);
 				int nCounts = neuronCounts[lPrev] + 1;
-				int dif = nCounts & 7;
-				int siz = nCounts - dif;
+				int siz = nCounts - (nCounts & 7);
 				for (int k = 0; k < siz; k = k + 8) {
 					_mulAdd(&t[k], &n[k], &neurons[row]);
 				}
@@ -566,7 +564,7 @@ float* NeuralNetwork::forwardPropogate(float *tList, float *xList) {
 					neurons[row] += t[k] * n[k];
 				}
 
-				neurons[row] = (UPPER_BOUND / (UPPER_BOUND + pow(E, -neurons[row])));
+				neurons[row] = (UPPER_BOUND / (1 + pow(E, -neurons[row]))) + LOWER_BOUND;
 			}
 		}
 	}
