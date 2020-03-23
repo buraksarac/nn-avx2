@@ -176,6 +176,10 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 			int lPrev = l - 1;
 			int previousLayer = nLayerCache[l];
 			bool isLast = l == (layerCount - 1);
+			int dCache = dlayerCache[l - 1];
+			int nCounts = neuronCounts[lPrev] + 1;
+			int siz = nCounts - (nCounts & 7);
+			float *n = &(neurons[nLayerCache[lPrev]]);
 			int neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
 			for (int j = 0; j < neuronSize; j++) {
 				int jPrev = j - 1;
@@ -187,10 +191,7 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 				} else if (l == 0) {
 					neurons[row] = x[jPrev];
 				} else {
-					float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dlayerCache[lPrev]]);
-					float *n = &(neurons[nLayerCache[lPrev]]);
-					int nCounts = neuronCounts[lPrev] + 1;
-					int siz = nCounts - (nCounts & 7);
+					float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
 					for (int k = 0; k < siz; k = k + 8) {
 						_mulAdd(&t[k], &n[k], &neurons[row]);
 					}
@@ -226,8 +227,7 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 					int isLast = nCounts - 1;
 					float sigmoid = (nVal * (1 - nVal));
 					float *t2 = &(t[j]);
-					int dif = nCounts & 3;
-					int siz = nCounts - dif;
+					int siz = nCounts - (nCounts & 3);
 					int val = dMatrixInfo[iNext][1];
 					for (int k = 0; k < siz; k = k + 4) {
 						errors[row] += t2[val * k] * e[k];
@@ -263,8 +263,7 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 			int isLast = i == layerCount - 2;
 			int dCache = dlayerCache[i];
 			float *d = &(data->deltas[dCache]);
-			int dif = n1 & 7;
-			int siz = n1 - dif;
+			int siz = n1 - (n1 & 7);
 			for (int j = 0; j < siz; j = j + 8) {
 				if (isLast) {
 					_sums(&yList[yCache + j], &neurons[nCache1 + j], &sum);
@@ -278,7 +277,7 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 				float eVal5 = e[index++];
 				float eVal6 = e[index++];
 				float eVal7 = e[index++];
-				float eVal8 = e[index++];
+				float eVal8 = e[index];
 				float *d2 = &(d[dMatrixInfo[i][1] * m++]);
 				float *d22 = &(d[dMatrixInfo[i][1] * m++]);
 				float *d23 = &(d[dMatrixInfo[i][1] * m++]);
@@ -286,9 +285,8 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 				float *d25 = &(d[dMatrixInfo[i][1] * m++]);
 				float *d26 = &(d[dMatrixInfo[i][1] * m++]);
 				float *d27 = &(d[dMatrixInfo[i][1] * m++]);
-				float *d28 = &(d[dMatrixInfo[i][1] * m++]);
-				int diff = n2 & 7;
-				int size = n2 - diff;
+				float *d28 = &(d[dMatrixInfo[i][1] * m]);
+				int size = n2 - (n2 & 7);
 				for (int k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d2[k], &eVal, &n[k]);
 					_mulAddBroadcast(&d22[k], &eVal2, &n[k]);
@@ -299,37 +297,30 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 					_mulAddBroadcast(&d27[k], &eVal7, &n[k]);
 					_mulAddBroadcast(&d28[k], &eVal8, &n[k]);
 				}
-				for (int d = 0; d < diff; d++) {
-					float nVal = n[size + d];
-					d2[size + d] += eVal * nVal;
-					d22[size + d] += eVal2 * nVal;
-					d23[size + d] += eVal3 * nVal;
-					d24[size + d] += eVal4 * nVal;
-					d25[size + d] += eVal5 * nVal;
-					d26[size + d] += eVal6 * nVal;
-					d27[size + d] += eVal7 * nVal;
-					d28[size + d] += eVal8 * nVal;
+				for (int d = size; d < n2; d++) {
+					float nVal = n[d];
+					d2[d] += eVal * nVal;
+					d22[d] += eVal2 * nVal;
+					d23[d] += eVal3 * nVal;
+					d24[d] += eVal4 * nVal;
+					d25[d] += eVal5 * nVal;
+					d26[d] += eVal6 * nVal;
+					d27[d] += eVal7 * nVal;
+					d28[d] += eVal8 * nVal;
 				}
 			}
 
-			for (int a = 0; a < dif; a++) {
-				int j = a + siz;
+			for (int a = siz; a < n1; a++) {
 				if (isLast) {
 
-					sum += ((-1 * yList[yCache + j]) * log(neurons[nCache1 + j])) - ((1 - yList[yCache + j]) * log(1 - neurons[nCache1 + j]));
+					sum += ((-1 * yList[yCache + a]) * log(neurons[nCache1 + a])) - ((1 - yList[yCache + a]) * log(1 - neurons[nCache1 + a]));
 				}
-				int index = i == 0 ? j + 1 : j;
-				int drcache = (dMatrixInfo[i][1] * j);
+				int index = i == 0 ? a + 1 : a;
+				int drcache = (dMatrixInfo[i][1] * a);
 				float eVal = e[index];
 				float *d2 = &(d[drcache]);
-				int diff = n2 & 7;
-				int size = n2 - diff;
-				for (int k = 0; k < size; k = k + 8) {
-					_mulAddBroadcast(&d2[k], &eVal, &n[k]);
-				}
-				for (int d = 0; d < diff; d++) {
-					float nVal = n[size + d];
-					d2[size + d] += eVal * nVal;
+				for (int d = 0; d < n2; d++) {
+					d2[d] += eVal * n[d];
 				}
 			}
 
