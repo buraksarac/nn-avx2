@@ -65,17 +65,10 @@ NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCou
 	tyf = lambda / (2.0f * ySizefloat);
 
 	numberOfThreads = numberOfThreads > concurentThreadsSupported ? concurentThreadsSupported : numberOfThreads;
-	pDeltas = (float**) malloc(sizeof(float*) * numberOfThreads);
 	stDatas = (struct stData*) malloc(sizeof(struct stData) * numberOfThreads);
 	threads = (pthread_t*) malloc(sizeof(pthread_t) * numberOfThreads - 1);
-	loops = (struct loop*) malloc(sizeof(struct loop) * numberOfThreads);
 	threadBarrier = concurentThreadsSupported - numberOfThreads;
 
-	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
-		int t = i - threadBarrier;
-		loops[t].loopMin = (int) ((long) (t + 0) * (long) (ySize) / (long) numberOfThreads);
-		loops[t].loopMax = (int) ((long) (t + 1) * (long) (ySize) / (long) numberOfThreads);
-	}
 	//we need rowcount in float value for calculation
 
 	for (int i = 0; i < layerCount; ++i) {
@@ -98,6 +91,34 @@ NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCou
 
 	mDeltaSize = sizeof(float) * deltaSize;
 
+	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
+		int t = i - threadBarrier;
+		int isMain = t == 0;
+		int loopmin = (int) ((long) (t + 0) * (long) (ySize) / (long) numberOfThreads);
+		int loopmax = (int) ((long) (t + 1) * (long) (ySize) / (long) numberOfThreads);
+		stDatas[t].deltas = (float*) malloc(sizeof(float) * deltaSize);
+		stDatas[t].xList = xList;
+		stDatas[t].ySizeF = yf;
+		stDatas[t].yList = yList;
+		stDatas[t].layerCount = layerCount;
+		stDatas[t].neuronCounts = neuronCounts;
+		stDatas[t].lambda = lambda;
+		stDatas[t].neuronSize = neuronSize;
+		stDatas[t].errorSize = errorSize;
+		stDatas[t].deltaSize = deltaSize;
+		stDatas[t].xListRows = xColumns;
+		stDatas[t].dlayerCache = dLayerCache;
+		stDatas[t].dMatrixInfo = dMatrixDimensions;
+		stDatas[t].nLayerCache = nLayerCache;
+		stDatas[t].eLayerCache = eLayerCache;
+		stDatas[t].numLabels = numberOfLabels;
+		stDatas[t].cost = 0.0f;
+		stDatas[t].isLast = isMain;
+		stDatas[t].loopMin = loopmin;
+		stDatas[t].loopMax = loopmax;
+
+	}
+
 }
 
 NeuralNetwork::~NeuralNetwork() {
@@ -106,8 +127,11 @@ NeuralNetwork::~NeuralNetwork() {
 	delete[] eLayerCache;
 	free(xList);
 	delete[] yList;
+
+	for (int i = 0; i < numberOfThreads; ++i) {
+		free(stDatas[i].deltas);
+	}
 	free(stDatas);
-	free(pDeltas);
 	free(threads);
 
 }
@@ -146,11 +170,13 @@ void _sums(float *ylist, float *neurons, float *sum) {
 
 void* NeuralNetwork::calculateBackCost(void *dat) {
 	struct stData *data = (struct stData*) dat;
-	data->cost = 0;
 	float *neurons = (float*) malloc(sizeof(float) * data->neuronSize);
 	float *errors = (float*) malloc(sizeof(float) * data->errorSize);
-	data->deltas = (float*) malloc(sizeof(float) * data->deltaSize);
-	for (int i = 0; i < data->deltaSize; ++i) {
+	int dSize = data->deltaSize - (data->deltaSize & 7);
+	for (int i = 0; i < dSize; i += 8) {
+		_mm256_storeu_ps(&(data->deltas[i]), zeros);
+	}
+	for (int i = dSize; i < data->deltaSize; i++) {
 		data->deltas[i] = 0;
 	}
 	int layerCount = data->layerCount;
@@ -348,30 +374,10 @@ GradientParameter* NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 	float cost = 0.0f;
 	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
 		int t = i - threadBarrier;
-		int isMain = t == 0;
-		stDatas[t].deltas = &(pDeltas[t][0]);
-		stDatas[t].xList = xList;
-		stDatas[t].ySizeF = yf;
-		stDatas[t].yList = yList;
-		stDatas[t].layerCount = layerCount;
-		stDatas[t].neuronCounts = neuronCounts;
-		stDatas[t].lambda = lambda;
 		stDatas[t].thetas = thetas;
-		stDatas[t].neuronSize = neuronSize;
-		stDatas[t].errorSize = errorSize;
-		stDatas[t].deltaSize = deltaSize;
-		stDatas[t].xListRows = xColumns;
-		stDatas[t].dlayerCache = dLayerCache;
-		stDatas[t].dMatrixInfo = dMatrixDimensions;
-		stDatas[t].nLayerCache = nLayerCache;
-		stDatas[t].eLayerCache = eLayerCache;
-		stDatas[t].numLabels = numberOfLabels;
 		stDatas[t].cost = 0.0f;
-		stDatas[t].isLast = isMain;
-		stDatas[t].loopMin = loops[t].loopMin;
-		stDatas[t].loopMax = loops[t].loopMax;
 
-		if (isMain) {
+		if (stDatas[t].isLast) {
 			//if its last handle by main thread
 			this->calculateBackCost(&stDatas[t]);
 		} else {
@@ -414,7 +420,6 @@ GradientParameter* NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 
 	for (int i = 0; i < numberOfThreads; ++i) {
 		cost += stDatas[i].cost;
-		free(stDatas[i].deltas);
 	}
 
 	cost += thetaSum * tyf;

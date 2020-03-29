@@ -78,11 +78,9 @@ private:
 	float *xList;
 	float *yList;
 	int numberOfThreads;
-	float **pDeltas;
 	struct stData *stDatas;
 	pthread_t *threads;
 	int threadBarrier;
-	struct loop *loops;
 public:
 	NeuralNetwork(int noThreads, float *alist, float *blist, int layerCount, int *neuronCounts, int numberOfLabels, int ySize, int xColumnSize, float l);
 	GradientParameter* calculateBackCostWithThetas(float *thetas);
