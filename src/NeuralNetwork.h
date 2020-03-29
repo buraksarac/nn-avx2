@@ -50,6 +50,10 @@ struct stData {
 	int isLast;
 	int loopMin;
 	int loopMax;
+	pthread_cond_t waitCond;
+	pthread_cond_t completeCond;
+	pthread_mutex_t mutex;
+	int workType;
 };
 class NeuralNetwork {
 private:
@@ -85,6 +89,7 @@ public:
 	NeuralNetwork(int noThreads, float *alist, float *blist, int layerCount, int *neuronCounts, int numberOfLabels, int ySize, int xColumnSize, float l);
 	GradientParameter* calculateBackCostWithThetas(float *thetas);
 	static void* calculateBackCost(void *dat);
+	static void calculateBackCost(struct stData *data);
 	float* forwardPropogate(int aListIndex, float *tList, float *xList);
 	void predict(float *tList, float *yTemp);
 	void predict(int rows, float *xlist, float *tList, float *yTemp);

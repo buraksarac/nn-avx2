@@ -116,12 +116,38 @@ NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCou
 		stDatas[t].isLast = isMain;
 		stDatas[t].loopMin = loopmin;
 		stDatas[t].loopMax = loopmax;
+		stDatas[t].workType = 0;
+		if (!stDatas[t].isLast) {
+			pthread_create(&threads[t], NULL, calculateBackCost, (void*) &(stDatas[t]));
+			cpu_set_t cpuset;
+			CPU_ZERO(&cpuset);
+			CPU_SET(i, &cpuset);
+			pthread_setaffinity_np(threads[t], sizeof(cpu_set_t), &cpuset);
+
+		}
 
 	}
 
 }
 
 NeuralNetwork::~NeuralNetwork() {
+	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
+		int t = i - threadBarrier;
+		if (!stDatas[t].isLast) {
+			pthread_mutex_lock(&stDatas[t].mutex);
+			stDatas[t].workType = -1;
+			pthread_mutex_unlock(&stDatas[t].mutex);
+			pthread_cond_signal(&stDatas[t].waitCond);
+		}
+
+	}
+	for (int i = concurentThreadsSupported - 1; i > threadBarrier; i--) {
+		int t = i - threadBarrier;
+		pthread_join(threads[t], NULL);
+		pthread_mutex_destroy(&stDatas[t].mutex);
+		pthread_cond_destroy(&stDatas[t].waitCond);
+		pthread_cond_destroy(&stDatas[t].completeCond);
+	}
 	delete[] dLayerCache;
 	delete[] nLayerCache;
 	delete[] eLayerCache;
@@ -168,8 +194,7 @@ void _sums(float *ylist, float *neurons, float *sum) {
 	}
 }
 
-void* NeuralNetwork::calculateBackCost(void *dat) {
-	struct stData *data = (struct stData*) dat;
+void NeuralNetwork::calculateBackCost(struct stData *data) {
 	float *neurons = (float*) malloc(sizeof(float) * data->neuronSize);
 	float *errors = (float*) malloc(sizeof(float) * data->errorSize);
 	int dSize = data->deltaSize - (data->deltaSize & 7);
@@ -357,10 +382,32 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 
 	free(neurons);
 	free(errors);
+}
 
-	if (!data->isLast) {
-		pthread_exit(NULL);
+void* NeuralNetwork::calculateBackCost(void *dat) {
+	struct stData *data = (struct stData*) dat;
+	int w = 0;
+	for (;;) {
+		pthread_mutex_lock(&data->mutex);
+
+		while ((w = data->workType) == 0) {
+			pthread_cond_wait(&data->waitCond, &data->mutex);
+		}
+
+		pthread_mutex_unlock(&data->mutex);
+
+		if (w == -1) {
+			break;
+		}
+
+		calculateBackCost(data);
+
+		pthread_mutex_lock(&data->mutex);
+		data->workType = 0;
+		pthread_mutex_unlock(&data->mutex);
+		pthread_cond_signal(&data->completeCond);
 	}
+	pthread_exit(NULL);
 
 	return 0;
 }
@@ -376,23 +423,24 @@ GradientParameter* NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		int t = i - threadBarrier;
 		stDatas[t].thetas = thetas;
 		stDatas[t].cost = 0.0f;
-
 		if (stDatas[t].isLast) {
 			//if its last handle by main thread
 			this->calculateBackCost(&stDatas[t]);
 		} else {
-			pthread_create(&threads[t], NULL, calculateBackCost, (void*) &(stDatas[t]));
-			cpu_set_t cpuset;
-			CPU_ZERO(&cpuset);
-			CPU_SET(i, &cpuset);
-			pthread_setaffinity_np(threads[t], sizeof(cpu_set_t), &cpuset);
-
+			pthread_mutex_lock(&stDatas[t].mutex);
+			stDatas[t].workType = 1;
+			pthread_mutex_unlock(&stDatas[t].mutex);
+			pthread_cond_signal(&stDatas[t].waitCond);
 		}
 
 	}
 	for (int i = concurentThreadsSupported - 1; i > threadBarrier; i--) {
 		int t = i - threadBarrier;
-		pthread_join(threads[t], NULL);
+		pthread_mutex_lock(&stDatas[t].mutex);
+		while (stDatas[t].workType != 0) {
+			pthread_cond_wait(&stDatas[t].completeCond, &stDatas[t].mutex);
+		}
+		pthread_mutex_unlock(&stDatas[t].mutex);
 	}
 
 	float thetaSum = 0.0;
