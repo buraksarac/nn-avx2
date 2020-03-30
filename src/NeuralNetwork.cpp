@@ -725,15 +725,16 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 //collect all data from threads and update cost
 
 	int da = 0;
+	int dc = 0;
 	for (int l = 0; l < deltaSize; l++) {
-		int dc = (l - dLayerCache[da]) % dMatrixDimensions[da][1];
+		dc = (l - dLayerCache[da]) % dMatrixDimensions[da][1];
 		deltas[l] = 0.0;
 		for (int i = 0; i < numberOfThreads; i++) {
 			deltas[l] += stDatas[i].deltas[l];
 		}
 		deltas[l] *= yf;
 		deltas[l] = dc > 0 ? fma(lyf, thetas[l], deltas[l]) : deltas[l];
-		thetaSum += dc > 0 ? pow(thetas[l], 2) : 0;
+		thetaSum += dc > 0 ? pow(thetas[l],2)   : 0;
 		da += (l + 1) == dLayerCache[da + 1];
 	}
 
