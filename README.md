@@ -1,5 +1,5 @@
 # nn-avx2
-Neural Network implementation (Back/Forward)with avx2 and fma instructions. This is a full batch app, so everything loaded into memory. Currently best performs on single hidden layer (input + 1 hidden + output) yet still hidden node counts are configurable.
+Neural Network implementation (Back/Forward)with avx2 and fma(4) instructions. This is a full batch app, so everything loaded into memory. Currently best performs on single hidden layer (input + 1 hidden + output) yet still hidden node counts are configurable.
 
 This is my C application I have used for kaggle competitions. Input layer needs to be space separated, see xShuffled.dat and yShuffled.day for example. It uses clang,pthread and -mfma -mavx2 instructions. You might want to update hardcoded cpu architecture on related files (find . -type f -exec grep -l 'znver1' {} \;) 
 
@@ -12,8 +12,13 @@ make all -j32
 Running with example data (5000 20x20 digit images, each image contains picture of numbers from 0 to 9):
 ```
 cd Release
-./nn-avx2 -x ../xShuffled.dat -y ../yShuffled.dat -r 5000 -c 400 -n 10 -t 1 -h 25 -i 1000 -l 0.0025 -j $(nproc) -test 15 -ps 64
+nice taskset 0x01 ./nn-avx2 -x ../xShuffled.dat -y ../yShuffled.dat -r 5000 -c 400 -n 10 -t 1 -h 256 -i 513 -l 0.99 -j $(nproc) -test 15 -ps 64
 ```
+This example means:
+ Run with high thread priority, run main thread on first core, input layer  400, hidden layer 256, output layer 10 , total 5000 image, iterate 513 times, use all threads, test 15% of data and train 85%, show me steps on each 64th iteration. If thread count more than 1 then rest of the threads will spread from max to low, i.e. if 8 core and and 6 thread requested and main thread set to 0, then 7,6,5,4,3 and 0 will be pinned.
+
+If you would like to watch more steps decrease -ps param to a lower number which is power of 2, i.e. -ps 16 
+
 ```
 USAGE:
 
