@@ -51,8 +51,6 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 	nLayerCache = new int[layerCount + 1];
 	eLayerCache = new int[layerCount];
 	dMatrixSize = 0;
-	xDim2 = neuronCounts[0];
-	yDim2 = numberOfLabels;
 	nLayerCache[0] = 0;
 	eLayerCache[0] = 0;
 	dLayerCache[0] = 0;

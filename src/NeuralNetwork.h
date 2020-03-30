@@ -88,8 +88,6 @@ private:
 	int *nLayerCache;
 	int *eLayerCache;
 	int dMatrixSize;
-	int xDim2;
-	int yDim2;
 	int neuronSize;
 	int errorSize;
 	int deltaSize;
