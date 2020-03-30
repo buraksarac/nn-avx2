@@ -44,7 +44,7 @@ all: nn-avx2
 nn-avx2: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	clang++ -mfma -mavx2 -march=znver1 -o "nn-avx2" $(OBJS) $(USER_OBJS) $(LIBS)
+	clang++ -ffp-contract=fast -ffast-math -mfma4 -mavx2 -march=znver1 -o "nn-avx2" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

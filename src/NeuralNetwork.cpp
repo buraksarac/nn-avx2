@@ -23,6 +23,7 @@
 #include <math.h>
 #include <limits>
 #include "avx2.h"
+#include "x86intrin.h"
 #include <thread>
 #include <sys/time.h>
 using namespace std;
@@ -177,7 +178,7 @@ void _mulAddBroadcast(float *d, float *e, float *n) {
 	__m256 vn = _mm256_loadu_ps(n);
 	__m256 ve = _mm256_broadcast_ss(e);
 
-	__m256 res = _mm256_fmadd_ps(ve, vn, vd);
+	__m256 res = _mm256_macc_ps(ve, vn, vd);
 	_mm256_storeu_ps(d, res);
 }
 
@@ -185,10 +186,9 @@ void _sums(float *ylist, float *neurons, float *sum) {
 
 	__m256 y = _mm256_loadu_ps(ylist);
 	__m256 n = _mm256_loadu_ps(neurons);
-	__m256 negateY = _mm256_sub_ps(zeros, y);
 	__m256 minusY = _mm256_sub_ps(ones, y);
 	__m256 minusN = _mm256_sub_ps(ones, n);
-	__m256 res = _mm256_sub_ps(_mm256_mul_ps(negateY, log256_ps(n)), _mm256_mul_ps(minusY, log256_ps(minusN)));
+	__m256 res = _mm256_nmsub_ps(y, log256_ps(n), _mm256_mul_ps(minusY, log256_ps(minusN)));
 	for (int i = 0; i < 8; i++) {
 		sum[0] += res[i];
 	}
@@ -198,7 +198,7 @@ void _mulFmaddStore(float *a, float *b, float *c) {
 	__m256 va = _mm256_loadu_ps(a);
 	__m256 vb = _mm256_loadu_ps(b);
 	__m256 vc = _mm256_loadu_ps(c);
-	__m256 vres = _mm256_fmadd_ps(va, vb, vc);
+	__m256 vres = _mm256_macc_ps(va, vb, vc);
 	_mm256_storeu_ps(c, vres);
 
 }
@@ -228,19 +228,12 @@ void _mcopy(float *a, float *b) {
 	__m256 buffer = _mm256_loadu_ps(a);
 	_mm256_storeu_ps(b, buffer);
 }
-void _mulAddBroadcastF(float *d, float *e, float *n) {
-	__m256 vd = _mm256_loadu_ps(d);
-	__m256 vn = _mm256_loadu_ps(n);
-	__m256 ve = _mm256_broadcast_ss(e);
 
-	__m256 res = _mm256_fmadd_ps(ve, vn, vd);
-	_mm256_storeu_ps(d, res);
-}
 void _mulSub(float *a, float *b, float *c) {
 	__m256 va = _mm256_broadcast_ss(a);
 	__m256 vb = _mm256_loadu_ps(b);
 	__m256 vc = _mm256_loadu_ps(c);
-	__m256 vres = _mm256_fmsub_ps(va, vb, vc);
+	__m256 vres = _mm256_msub_ps(va, vb, vc);
 	_mm256_storeu_ps(b, vres);
 }
 void _mswap(float *a, float *b) {
@@ -255,13 +248,13 @@ void fWork1(stData *param) {
 	for (int r = 0; r < param->size; r += 8) {
 		_mcopy(&param->x[r], &param->x0[r]);
 		_mcopy(&param->df1[r], &param->df0[r]);
-		_mulAddBroadcastF(&param->x[r], &param->z1, &param->s[r]);
+		_mulAddBroadcast(&param->x[r], &param->z1, &param->s[r]);
 	}
 
 	for (int r = param->size; r < param->end; r++) {
 		param->x0[r] = param->x[r]; //copy x value into x0
 		param->df0[r] = param->df1[r]; //copy df1 value into df0
-		param->x[r] += param->z1 * param->s[r]; //update x as X = X + z1*s;
+		param->x[r] = fma(param->z1, param->s[r], param->x[r]); //update x as X = X + z1*s;
 	}
 
 }
@@ -274,16 +267,16 @@ void fWork2(stData *param) {
 	}
 	for (int r = param->size; r < param->end; r++) {
 		param->df2[r] = param->calculatedDeltas[r];
-		param->d2 += param->s[r] * param->df2[r]; // d2 = df2'*s;
+		param->d2 = fma(param->s[r], param->df2[r], param->d2); // d2 = df2'*s;
 	}
 }
 
 void fWork3(stData *param) {
 	for (int r = 0; r < param->size; r += 8) {
-		_mulAddBroadcastF(&param->x[r], &param->z2, &param->s[r]);
+		_mulAddBroadcast(&param->x[r], &param->z2, &param->s[r]);
 	}
 	for (int r = param->size; r < param->end; r++) {
-		param->x[r] += param->z2 * param->s[r];
+		param->x[r] = fma(param->z2, param->s[r], param->x[r]);
 	}
 }
 
@@ -295,16 +288,16 @@ void fWork4(stData *param) {
 	}
 	for (int r = param->size; r < param->end; r++) {
 		param->df2[r] = param->calculatedDeltas[r];
-		param->d2 += param->s[r] * param->df2[r]; // d2 = df2'*s;
+		param->d2 = fma(param->s[r], param->df2[r], param->d2); // d2 = df2'*s;
 	}
 }
 
 void fWork5(stData *param) {
 	for (int r = 0; r < param->size; r += 8) {
-		_mulAddBroadcastF(&param->x[r], &param->z2, &param->s[r]);
+		_mulAddBroadcast(&param->x[r], &param->z2, &param->s[r]);
 	}
 	for (int r = param->size; r < param->end; r++) {
-		param->x[r] += param->z2 * param->s[r];
+		param->x[r] = fma(param->z2, param->s[r], param->x[r]);
 	}
 }
 
@@ -316,7 +309,7 @@ void fWork6(stData *param) {
 	}
 	for (int r = param->size; r < param->end; r++) {
 		param->df2[r] = param->calculatedDeltas[r];
-		param->d2 += param->s[r] * param->df2[r]; // d2 = df2'*s;
+		param->d2 = fma(param->s[r], param->df2[r], param->d2); // d2 = df2'*s;
 	}
 }
 
@@ -330,9 +323,9 @@ void fWork7(stData *param) {
 		_mulFmaddStore2(&param->df1[r], &param->df1[r], &param->sum3);
 	}
 	for (int r = param->size; r < param->end; r++) {
-		param->sum1 += param->df2[r] * param->df2[r];
-		param->sum2 += param->df1[r] * param->df2[r];
-		param->sum3 += param->df1[r] * param->df1[r];
+		param->sum1 = fma(param->df2[r], param->df2[r], param->sum1);
+		param->sum2 = fma(param->df1[r], param->df2[r], param->sum2);
+		param->sum3 = fma(param->df1[r], param->df1[r], param->sum3);
 	}
 }
 
@@ -348,7 +341,7 @@ void fWork8(stData *param) {
 		float tmp = param->df1[r];
 		param->df1[r] = param->df2[r];
 		param->df2[r] = tmp;
-		param->d2 += param->df1[r] * param->s[r]; // d2 = df1'*s;
+		param->d2 = fma(param->df1[r], param->s[r], param->d2); // d2 = df1'*s;
 	}
 }
 
@@ -360,7 +353,7 @@ void fWork9(stData *param) {
 	}
 	for (int r = param->size; r < param->end; r++) {
 		param->s[r] = -1.0f * param->df1[r]; // s = -df1;
-		param->d2 += -1.0f * param->s[r] * param->s[r]; // d2 = -s'*s;
+		param->d2 = fma(-param->s[r], param->s[r], param->d2);
 	}
 }
 
@@ -387,7 +380,7 @@ void fWork11(stData *param) {
 		param->df1[r] = param->df2[r];
 		param->df2[r] = tmp;
 		param->s[r] = -1.0f * param->df1[r];
-		param->d1 += -1.0f * param->s[r] * param->s[r];
+		param->d1 = fma(-param->s[r], param->s[r], param->d1);
 	}
 }
 
@@ -401,7 +394,7 @@ void fWork13(stData *param) {
 	for (int r = param->size; r < param->end; r++) {
 		param->df1[r] = param->calculatedDeltas[r];
 		param->s[r] = -1.0f * param->df1[r];
-		param->d1 += -1.0f * param->s[r] * param->s[r];
+		param->d1 = fma(-param->s[r], param->s[r], param->d1);
 	}
 }
 
@@ -461,7 +454,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 						_mulAdd(&t[k], &n[k], &neurons[row]);
 					}
 					for (int k = siz; k < nCounts; k++) {
-						neurons[row] += t[k] * n[k];
+						neurons[row] = fma(t[k], n[k], neurons[row]);
 					}
 
 					neurons[row] = (UPPER_BOUND / (1 + pow(E, -neurons[row]))) + LOWER_BOUND;
@@ -495,15 +488,15 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 					int siz = nCounts - (nCounts & 3);
 					int val = dMatrixInfo[iNext][1];
 					for (int k = 0; k < siz; k = k + 4) {
-						errors[row] += t2[val * k] * e[k];
-						errors[row] += t2[val * (k + 1)] * e[k + 1];
-						errors[row] += t2[val * (k + 2)] * e[k + 2];
-						errors[row] += t2[val * (k + 3)] * e[k + 3];
+						errors[row] = fma(t2[val * k], e[k], errors[row]);
+						errors[row] = fma(t2[val * (k + 1)], e[k + 1], errors[row]);
+						errors[row] = fma(t2[val * (k + 2)], e[k + 2], errors[row]);
+						errors[row] = fma(t2[val * (k + 3)], e[k + 3], errors[row]);
 
 					}
 
 					for (int a = siz; a < nCounts; a++) {
-						errors[row] += t2[val * a] * e[a];
+						errors[row] = fma(t2[val * a], e[a], errors[row]);
 
 						errors[row] = a == isLast ? errors[row] * sigmoid : errors[row];
 					}
@@ -527,6 +520,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			int dCache = dlayerCache[i];
 			float *d = &(data->deltas[dCache]);
 			int siz = n1 - (n1 & 7);
+			int mi = dMatrixInfo[i][1];
 			for (int j = 0; j < siz; j = j + 8) {
 				if (isLast) {
 					_sums(&yList[yCache + j], &neurons[nCache1 + j], &sum);
@@ -541,14 +535,14 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				float eVal6 = e[index++];
 				float eVal7 = e[index++];
 				float eVal8 = e[index];
-				float *d2 = &(d[dMatrixInfo[i][1] * m++]);
-				float *d22 = &(d[dMatrixInfo[i][1] * m++]);
-				float *d23 = &(d[dMatrixInfo[i][1] * m++]);
-				float *d24 = &(d[dMatrixInfo[i][1] * m++]);
-				float *d25 = &(d[dMatrixInfo[i][1] * m++]);
-				float *d26 = &(d[dMatrixInfo[i][1] * m++]);
-				float *d27 = &(d[dMatrixInfo[i][1] * m++]);
-				float *d28 = &(d[dMatrixInfo[i][1] * m]);
+				float *d2 = &(d[mi * m++]);
+				float *d22 = &(d[mi * m++]);
+				float *d23 = &(d[mi * m++]);
+				float *d24 = &(d[mi * m++]);
+				float *d25 = &(d[mi * m++]);
+				float *d26 = &(d[mi * m++]);
+				float *d27 = &(d[mi * m++]);
+				float *d28 = &(d[mi * m]);
 				int size = n2 - (n2 & 7);
 				for (int k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d2[k], &eVal, &n[k]);
@@ -562,25 +556,29 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				}
 				for (int d = size; d < n2; d++) {
 					float nVal = n[d];
-					d2[d] += eVal * nVal;
-					d22[d] += eVal2 * nVal;
-					d23[d] += eVal3 * nVal;
-					d24[d] += eVal4 * nVal;
-					d25[d] += eVal5 * nVal;
-					d26[d] += eVal6 * nVal;
-					d27[d] += eVal7 * nVal;
-					d28[d] += eVal8 * nVal;
+					d2[d] = fma(eVal, nVal, d2[d]);
+					d22[d] = fma(eVal2, nVal, d22[d]);
+					d23[d] = fma(eVal3, nVal, d23[d]);
+					d24[d] = fma(eVal4, nVal, d24[d]);
+					d25[d] = fma(eVal5, nVal, d25[d]);
+					d26[d] = fma(eVal6, nVal, d26[d]);
+					d27[d] = fma(eVal7, nVal, d27[d]);
+					d28[d] = fma(eVal8, nVal, d28[d]);
 				}
 			}
 
 			for (int a = siz; a < n1; a++) {
-				sum += isLast ? ((-1 * yList[yCache + a]) * log(neurons[nCache1 + a])) - ((1 - yList[yCache + a]) * log(1 - neurons[nCache1 + a])) : 0;
+				sum += isLast ? -(yList[yCache + a] * log(neurons[nCache1 + a])) - ((1 - yList[yCache + a]) * log(1 - neurons[nCache1 + a])) : 0;
 				int index = i == 0 ? a + 1 : a;
 				int drcache = (dMatrixInfo[i][1] * a);
 				float eVal = e[index];
 				float *d2 = &(d[drcache]);
-				for (int d = 0; d < n2; d++) {
-					d2[d] += eVal * n[d];
+				int size = n2 - (n2 & 7);
+				for (int d = 0; d < size; d += 8) {
+					_mulAddBroadcast(&d2[d], &eVal, &n[d]);
+				}
+				for (int d = size; d < n2; d++) {
+					d2[d] = fma(eVal, n[d], d2[d]);
 				}
 			}
 
@@ -731,12 +729,10 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		int dc = (l - dLayerCache[da]) % dMatrixDimensions[da][1];
 		deltas[l] = 0.0;
 		for (int i = 0; i < numberOfThreads; i++) {
-
 			deltas[l] += stDatas[i].deltas[l];
-
 		}
 		deltas[l] *= yf;
-		deltas[l] += dc > 0 ? lyf * thetas[l] : 0;
+		deltas[l] = dc > 0 ? fma(lyf, thetas[l], deltas[l]) : deltas[l];
 		thetaSum += dc > 0 ? pow(thetas[l], 2) : 0;
 		da += (l + 1) == dLayerCache[da + 1];
 	}
@@ -745,8 +741,7 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		cost += stDatas[i].cost;
 	}
 
-	cost += thetaSum * tyf;
-	return cost;
+	return fma(thetaSum, tyf, cost);
 
 }
 

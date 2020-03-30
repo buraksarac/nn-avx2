@@ -32,7 +32,7 @@ CPP_DEPS += \
 src/%.o: ../src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	clang++ -O3 -Wall -c -fmessage-length=0 -mfma -mavx2 -march=znver1 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	clang++ -O3 -Wall -ffp-contract=fast -ffast-math -c -fmessage-length=0 -mfma4 -mavx2 -march=znver1 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

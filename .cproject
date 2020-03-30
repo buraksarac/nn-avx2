@@ -157,7 +157,9 @@
                                 								
                                 <option defaultValue="gnu.cpp.compiler.debugging.level.none" id="gnu.cpp.compiler.exe.release.option.debugging.level.1582169547" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
                                 								
-                                <option id="gnu.cpp.compiler.option.other.other.1792651527" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -mfma -mavx2 -march=znver1 " valueType="string"/>
+                                <option id="gnu.cpp.compiler.option.other.other.1792651527" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-ffp-contract=fast -ffast-math -c -fmessage-length=0 -mfma4 -mavx2 -march=znver1 " valueType="string"/>
+                                								
+                                <option id="gnu.cpp.compiler.option.dialect.std.1621844857" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.100562855" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
                                 							
@@ -169,7 +171,7 @@
                                 								
                                 <option defaultValue="gnu.c.debugging.level.none" id="gnu.c.compiler.exe.release.option.debugging.level.1623123116" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
                                 								
-                                <option id="gnu.c.compiler.option.misc.other.1961635377" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -mfma -mavx2 -march=znver1 " valueType="string"/>
+                                <option id="gnu.c.compiler.option.misc.other.1961635377" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-ffp-contract=fast -ffast-math -c -fmessage-length=0 -mfma4 -mavx2 -march=znver1 " valueType="string"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.140842303" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
                                 							
@@ -179,7 +181,7 @@
                             							
                             <tool command="clang++" id="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.1107653438" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.release">
                                 								
-                                <option id="gnu.cpp.link.option.flags.242631298" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-mfma -mavx2 -march=znver1" valueType="string"/>
+                                <option id="gnu.cpp.link.option.flags.242631298" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-ffp-contract=fast -ffast-math -mfma4 -mavx2 -march=znver1" valueType="string"/>
                                 								
                                 <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1029271769" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
                                     									
