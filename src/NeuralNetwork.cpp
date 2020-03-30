@@ -583,7 +583,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			}
 
 		}
-		data->cost += data->ySizeF * sum;
+		data->cost = fma(data->ySizeF, sum, data->cost);
 
 	}
 
