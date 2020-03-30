@@ -47,7 +47,7 @@
                                 								
                                 <option defaultValue="gnu.cpp.compiler.debugging.level.max" id="gnu.cpp.compiler.exe.debug.option.debugging.level.1794654567" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
                                 								
-                                <option id="gnu.cpp.compiler.option.other.other.28926591" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -mfma -mavx2 -march=znver1 " valueType="string"/>
+                                <option id="gnu.cpp.compiler.option.other.other.28926591" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-ffp-contract=fast -ffast-math -c -fmessage-length=0 -mfma4 -mavx2 -march=znver1 " valueType="string"/>
                                 								
                                 <option id="gnu.cpp.compiler.option.pthread.373059864" name="Support for pthread (-pthread)" superClass="gnu.cpp.compiler.option.pthread" useByScannerDiscovery="false" value="true" valueType="boolean"/>
                                 								
@@ -61,7 +61,7 @@
                                 								
                                 <option defaultValue="gnu.c.debugging.level.max" id="gnu.c.compiler.exe.debug.option.debugging.level.1090969107" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
                                 								
-                                <option id="gnu.c.compiler.option.misc.other.2090223447" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-c -fmessage-length=0 -mfma -mavx2 -march=znver1 " valueType="string"/>
+                                <option id="gnu.c.compiler.option.misc.other.2090223447" name="Other flags" superClass="gnu.c.compiler.option.misc.other" useByScannerDiscovery="false" value="-ffp-contract=fast -ffast-math -c -fmessage-length=0 -mfma4 -mavx2 -march=znver1 " valueType="string"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.183415717" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
                                 							
@@ -77,7 +77,7 @@
                                     								
                                 </option>
                                 								
-                                <option id="gnu.cpp.link.option.flags.1222600104" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-mfma -mavx2 -march=znver1 " valueType="string"/>
+                                <option id="gnu.cpp.link.option.flags.1222600104" name="Linker flags" superClass="gnu.cpp.link.option.flags" useByScannerDiscovery="false" value="-ffp-contract=fast -ffast-math -mfma4 -mavx2 -march=znver1 " valueType="string"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.103675036" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
                                     									
@@ -159,7 +159,7 @@
                                 								
                                 <option id="gnu.cpp.compiler.option.other.other.1792651527" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" useByScannerDiscovery="false" value="-ffp-contract=fast -ffast-math -c -fmessage-length=0 -mfma4 -mavx2 -march=znver1 " valueType="string"/>
                                 								
-                                <option id="gnu.cpp.compiler.option.dialect.std.1621844857" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
+                                <option id="gnu.cpp.compiler.option.dialect.std.1621844857" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.100562855" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
                                 							

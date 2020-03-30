@@ -115,6 +115,9 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 		stDatas[t].loopMin = loopmin;
 		stDatas[t].loopMax = loopmax;
 		stDatas[t].workType = 0;
+		stDatas[t].mutex = PTHREAD_MUTEX_INITIALIZER;
+		stDatas[t].completeCond = PTHREAD_COND_INITIALIZER;
+		stDatas[t].waitCond = PTHREAD_COND_INITIALIZER;
 		if (!stDatas[t].isLast) {
 			pthread_create(&threads[t], NULL, calculateBackCost, (void*) &(stDatas[t]));
 			cpu_set_t cpuset;
