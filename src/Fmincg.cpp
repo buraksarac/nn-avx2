@@ -54,7 +54,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 		for (int j = 0; j < neuronCounts[i + 1]; j++) {
 			for (int k = 0; k < neuronCounts[i] + 1; k++) {
 				int r = (rand() % neuronCounts[i + 1]) + neuronCounts[i] + 1;
-				thetas[columns++] = 0;//r * 2 * nLimit - nLimit;
+				thetas[columns++] = r * 2 * nLimit - nLimit;
 			}
 		}
 	}
