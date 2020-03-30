@@ -54,7 +54,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 		for (int j = 0; j < neuronCounts[i + 1]; j++) {
 			for (int k = 0; k < neuronCounts[i] + 1; k++) {
 				int r = (rand() % neuronCounts[i + 1]) + neuronCounts[i] + 1;
-				thetas[columns++] = r * 2 * nLimit - nLimit;
+				thetas[columns++] = 0;//r * 2 * nLimit - nLimit;
 			}
 		}
 	}
@@ -113,7 +113,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 	for (int i = noThreads - 1; i >= 0; i--) {
 		d1 += fParam[i].d1;
 	}
-	float z1 = 1.0f / (1.0f - d1);
+	float z1 = 1 / (1 - d1);
 
 	float d2 = 0.0;
 	float f3 = 0.0;
@@ -155,14 +155,14 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 		float limit = -1;
 		while (1) {
 			float z2 = 0.0;
-			while (((f2 > f1 + (z1 * RHO * d1)) | (d2 > (-1 * SIG * d1))) & (M > 0)) {
+			while (((f2 > f1 + (z1 * RHO * d1)) | (d2 > (-SIG * d1))) & (M > 0)) {
 				limit = z1;
 
 				if (f2 > f1) {
 					z2 = z3 - (0.5 * d3 * z3 * z3) / (d3 * z3 + f2 - f3);
 				} else {
-					A = 6.0f * (f2 - f3) / z3 + 3 * (d2 + d3);
-					B = 3.0f * (f3 - f2) - z3 * (d3 + 2 * d2);
+					A = 6 * (f2 - f3) / z3 + 3 * (d2 + d3);
+					B = 3 * (f3 - f2) - z3 * (d3 + 2 * d2);
 					z2 = (sqrt(B * B - A * d2 * z3 * z3) - B) / A;
 				}
 
@@ -195,7 +195,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 				z3 = z3 - z2;        // z3 is now relative to the location of z2
 			}
 
-			if ((f2 > f1 + (z1 * RHO * d1)) | (d2 > -1 * SIG * d1)) {
+			if ((f2 > f1 + (z1 * RHO * d1)) | (d2 > -SIG * d1)) {
 				break;
 			} else if (d2 > SIG * d1) {
 				success = 1;
@@ -208,24 +208,24 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 			B = 3 * (f3 - f2) - z3 * (d3 + 2 * d2);
 			z2 = -d2 * z3 * z3 / (B + sqrt(B * B - A * d2 * z3 * z3)); // num. error possible - ok!
 			if (isnan(z2) | isinf(z2) | (z2 < 0)) {
-				if (limit < -1 * 0.5) {
-					z2 = z1 * (EXT - 1.0);
+				if (limit < -0.5) {
+					z2 = z1 * (EXT - 1);
 				} else {
-					z2 = (limit - z1) / 2.0;
+					z2 = (limit - z1) / 2;
 				}
 			} else if ((limit > -0.5) & (z2 + z1 > limit)) {
-				z2 = (limit - z1) / 2.0;
+				z2 = (limit - z1) / 2;
 			} else if ((limit < -0.5) & (z2 + z1 > z1 * EXT)) {
-				z2 = z1 * (EXT - 1.0);
+				z2 = z1 * (EXT - 1);
 			} else if (z2 < -z3 * INT) {
 				z2 = -z3 * INT;
-			} else if ((limit > -0.5) & (z2 < (limit - z1) * (1.0 - INT))) {
-				z2 = (limit - z1) * (1.0 - INT);
+			} else if ((limit > -0.5) & (z2 < (limit - z1) * (1 - INT))) {
+				z2 = (limit - z1) * (1 - INT);
 			}
 
 			f3 = f2;
 			d3 = d2;
-			z3 = -1 * z2;
+			z3 = -z2;
 			z1 = z1 + z2;
 
 			//work5
@@ -314,7 +314,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 				d1 += fParam[i].d1;
 			}
 
-			z1 = 1.0f / (1.0f - d1);
+			z1 = 1 / (1 - d1);
 			ls_failed = 1;
 
 		}

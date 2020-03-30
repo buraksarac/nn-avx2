@@ -58,7 +58,7 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 	neuronSize = 0;
 	errorSize = 0;
 	ySizefloat = ySize;
-	yf = 1.0f / ySizefloat;
+	yf = 1 / ySizefloat;
 	lyf = params->getLambda() / ySizefloat;
 	tyf = params->getLambda() / (2.0f * ySizefloat);
 
@@ -350,7 +350,7 @@ void fWork9(stData *param) {
 		_mulFmaddStore1(&param->s[r], &param->d2);
 	}
 	for (int r = param->size; r < param->end; r++) {
-		param->s[r] = -1.0f * param->df1[r]; // s = -df1;
+		param->s[r] = -param->df1[r]; // s = -df1;
 		param->d2 = fma(-param->s[r], param->s[r], param->d2);
 	}
 }
@@ -377,7 +377,7 @@ void fWork11(stData *param) {
 		float tmp = param->df1[r];
 		param->df1[r] = param->df2[r];
 		param->df2[r] = tmp;
-		param->s[r] = -1.0f * param->df1[r];
+		param->s[r] = -param->df1[r];
 		param->d1 = fma(-param->s[r], param->s[r], param->d1);
 	}
 }
@@ -391,7 +391,7 @@ void fWork13(stData *param) {
 	}
 	for (int r = param->size; r < param->end; r++) {
 		param->df1[r] = param->calculatedDeltas[r];
-		param->s[r] = -1.0f * param->df1[r];
+		param->s[r] = -param->df1[r];
 		param->d1 = fma(-param->s[r], param->s[r], param->d1);
 	}
 }
