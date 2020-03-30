@@ -90,7 +90,7 @@ NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCou
 	}
 
 	mDeltaSize = sizeof(float) * deltaSize;
-	deltas = (float*)malloc(sizeof(float)*1);
+	deltas = (float*) malloc(sizeof(float) * 1);
 	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
 		int t = i - threadBarrier;
 		int isMain = t == 0;
@@ -506,9 +506,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 					for (int a = siz; a < nCounts; a++) {
 						errors[row] += t2[val * a] * e[a];
 
-						if (a == isLast) {
-							errors[row] = errors[row] * sigmoid;
-						}
+						errors[row] = a == isLast ? errors[row] * sigmoid : errors[row];
 					}
 				}
 
@@ -577,10 +575,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			}
 
 			for (int a = siz; a < n1; a++) {
-				if (isLast) {
-
-					sum += ((-1 * yList[yCache + a]) * log(neurons[nCache1 + a])) - ((1 - yList[yCache + a]) * log(1 - neurons[nCache1 + a]));
-				}
+				sum += isLast ? ((-1 * yList[yCache + a]) * log(neurons[nCache1 + a])) - ((1 - yList[yCache + a]) * log(1 - neurons[nCache1 + a])) : 0;
 				int index = i == 0 ? a + 1 : a;
 				int drcache = (dMatrixInfo[i][1] * a);
 				float eVal = e[index];
@@ -742,14 +737,9 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 
 		}
 		deltas[l] *= yf;
-		if (dc > 0) {
-			deltas[l] += lyf * thetas[l];
-			thetaSum += pow(thetas[l], 2);
-		}
-
-		if ((l + 1) == dLayerCache[da + 1]) {
-			da++;
-		}
+		deltas[l] += dc > 0 ? lyf * thetas[l] : 0;
+		thetaSum += dc > 0 ? pow(thetas[l], 2) : 0;
+		da += (l + 1) == dLayerCache[da + 1];
 	}
 
 	for (int i = 0; i < numberOfThreads; ++i) {
