@@ -707,7 +707,6 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		int t = i - threadBarrier;
 		stDatas[t].thetas = thetas;
 		stDatas[t].cost = 0.0f;
-		//int loopmin = (int) ((long) (t + 0) * (long) (deltaSize) / (long) numberOfThreads);
 		stDatas[t].calculatedDeltas = &(deltas[stDatas[t].tloopmin]);
 		if (stDatas[t].isLast) {
 			//if its last handle by main thread
