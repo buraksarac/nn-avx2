@@ -90,7 +90,7 @@ NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCou
 	}
 
 	mDeltaSize = sizeof(float) * deltaSize;
-	deltas = (float*) malloc(mDeltaSize);
+	deltas = (float*)malloc(sizeof(float)*1);
 	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
 		int t = i - threadBarrier;
 		int isMain = t == 0;
@@ -698,7 +698,8 @@ void NeuralNetwork::submitWork(int workType) {
 }
 float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 //allocate place for deltas
-
+	free(deltas);
+	deltas = (float*) malloc(mDeltaSize);
 //create params for each thread
 
 	float cost = 0.0f;
@@ -706,6 +707,8 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		int t = i - threadBarrier;
 		stDatas[t].thetas = thetas;
 		stDatas[t].cost = 0.0f;
+		//int loopmin = (int) ((long) (t + 0) * (long) (deltaSize) / (long) numberOfThreads);
+		stDatas[t].calculatedDeltas = &(deltas[stDatas[t].tloopmin]);
 		if (stDatas[t].isLast) {
 			//if its last handle by main thread
 			calculateCost(&stDatas[t]);

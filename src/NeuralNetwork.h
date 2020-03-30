@@ -71,6 +71,7 @@ struct stData {
 	int end;
 	int isMain;
 	float* calculatedDeltas;
+	int tloopmin;
 };
 class NeuralNetwork {
 private:

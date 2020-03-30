@@ -55,7 +55,7 @@ GradientParameter* Fmincg::calculate(int thetaRowCount, int noThreads, int numbe
 		for (int j = 0; j < neuronCounts[i + 1]; j++) {
 			for (int k = 0; k < neuronCounts[i] + 1; k++) {
 				int r = (rand() % neuronCounts[i + 1]) + neuronCounts[i] + 1;
-				thetas[columns++] = r * 2 * nLimit - nLimit;
+				thetas[columns++] = 0;//r * 2 * nLimit - nLimit;
 			}
 		}
 	}
@@ -107,6 +107,7 @@ GradientParameter* Fmincg::calculate(int noThreads, int thetaRowCount, int numbe
 		fParam[t].sum2 = 0;
 		fParam[t].sum3 = 0;
 		fParam[t].p = 0;
+		fParam[t].tloopmin = loopmin;
 
 	}
 	float f1 = neuralNetwork->calculateBackCostWithThetas(x);
