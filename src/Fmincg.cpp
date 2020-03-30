@@ -391,7 +391,7 @@ GradientParameter* Fmincg::calculate(int noThreads, int thetaRowCount, int numbe
 				_mulNegate(&df1[r], &s[r]);
 				_mulFmaddStore1(&s[r], &d1);
 			}
-			for (int r = 0; r < thetaRowCount; r++) {
+			for (int r = size; r < thetaRowCount; r++) {
 				float tmp = df1[r];
 				df1[r] = df2[r];
 				df2[r] = tmp;
