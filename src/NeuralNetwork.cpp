@@ -35,17 +35,16 @@ static const __m256 zeros = _mm256_set1_ps(0);
 static const __m256 V_ALL_SET = _mm256_set1_ps(-1);
 #define E exp(1.0)
 static const unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
-NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCount, int *nCounts, int nOfLabels, int yWeight, int xColumnSize, float l) {
+NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, int *nCounts) {
 
-	lambda = l;
-	numberOfThreads = noThreads;
+	numberOfThreads = params->getNumberOfThreads();
 	xList = alist;
 	yList = blist;
-	xColumns = xColumnSize;
-	layerCount = lCount;
+	xColumns = params->getColumnCount();
+	layerCount = params->getTotalLayerCount();
 	neuronCounts = nCounts;
-	numberOfLabels = nOfLabels;
-	ySize = yWeight;
+	numberOfLabels = params->getNumberOfLabels();
+	ySize = params->getRowCount();
 	dMatrixDimensions = new int*[layerCount - 1];
 	dLayerCache = new int[layerCount];
 	nLayerCache = new int[layerCount + 1];
@@ -61,8 +60,8 @@ NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCou
 	errorSize = 0;
 	ySizefloat = ySize;
 	yf = 1.0f / ySizefloat;
-	lyf = lambda / ySizefloat;
-	tyf = lambda / (2.0f * ySizefloat);
+	lyf = params->getLambda() / ySizefloat;
+	tyf = params->getLambda() / (2.0f * ySizefloat);
 
 	numberOfThreads = numberOfThreads > concurentThreadsSupported ? concurentThreadsSupported : numberOfThreads;
 	stDatas = (struct stData*) malloc(sizeof(struct stData) * numberOfThreads);
@@ -102,7 +101,7 @@ NeuralNetwork::NeuralNetwork(int noThreads, float *alist, float *blist, int lCou
 		stDatas[t].yList = yList;
 		stDatas[t].layerCount = layerCount;
 		stDatas[t].neuronCounts = neuronCounts;
-		stDatas[t].lambda = lambda;
+		stDatas[t].lambda = params->getLambda();
 		stDatas[t].neuronSize = neuronSize;
 		stDatas[t].errorSize = errorSize;
 		stDatas[t].deltaSize = deltaSize;

@@ -43,15 +43,14 @@ static NeuralNetwork *neuralNetwork;
 NeuralNetwork* Fmincg::getNN() {
 	return neuralNetwork;
 }
-GradientParameter* Fmincg::calculate(int thetaRowCount, int noThreads, int numberOfLabels, int maxIterations, float *aList, int ySize, int xColumnSize, float *yList, int totalLayerCount,
-		int *neuronCounts, float lambda, float *yTemp, int testRows, int steps, int save) {
+GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRowCount, float *aList, float *yList, int *neuronCounts, float *yTemp, int testRows) {
 
 	srand(time(0));
 
 	float nLimit = numeric_limits<float>::epsilon();
 	float *thetas = (float*) malloc(sizeof(float) * thetaRowCount);
 	int columns = 0;
-	for (int i = 0; i < totalLayerCount - 1; i++) {
+	for (int i = 0; i < params->getTotalLayerCount() - 1; i++) {
 		for (int j = 0; j < neuronCounts[i + 1]; j++) {
 			for (int k = 0; k < neuronCounts[i] + 1; k++) {
 				int r = (rand() % neuronCounts[i + 1]) + neuronCounts[i] + 1;
@@ -60,16 +59,17 @@ GradientParameter* Fmincg::calculate(int thetaRowCount, int noThreads, int numbe
 		}
 	}
 
-	return Fmincg::calculate(noThreads, thetaRowCount, numberOfLabels, maxIterations, aList, ySize, xColumnSize, yList, totalLayerCount, neuronCounts, lambda, thetas, yTemp, testRows, steps, save);
+	return Fmincg::calculate(params, thetaRowCount, aList, yList, neuronCounts, thetas, yTemp, testRows);
 
 }
 
-GradientParameter* Fmincg::calculate(int noThreads, int thetaRowCount, int numberOfLabels, int maxIterations, float *aList, int ySize, int xColumnSize, float *yList, int layerCount, int *neuronCounts,
-		float lambda, float *tList, float *yTemp, int testRows, int steps, int save) {
+GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRowCount, float *aList, float *yList, int *neuronCounts, float *tList, float *yTemp, int testRows) {
 
 	float *x = tList;
-
-	neuralNetwork = new NeuralNetwork(noThreads, aList, yList, layerCount, neuronCounts, numberOfLabels, ySize, xColumnSize, lambda);
+	int noThreads = params->getNumberOfThreads();
+	unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
+	int threadBarrier = concurentThreadsSupported - noThreads;
+	neuralNetwork = new NeuralNetwork(params, aList, yList, neuronCounts);
 	int i = 0;
 	int ls_failed = 0;   // no previous line search has failed
 	int n = 0;
@@ -82,8 +82,7 @@ GradientParameter* Fmincg::calculate(int noThreads, int thetaRowCount, int numbe
 	float *df0 = new float[thetaRowCount];
 	float *df2 = new float[thetaRowCount];
 	struct stData *fParam = neuralNetwork->stDatas;
-	unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
-	int threadBarrier = concurentThreadsSupported - noThreads;
+
 	for (int a = concurentThreadsSupported - 1; a >= threadBarrier; a--) {
 		int t = a - threadBarrier;
 		int loopmin = (int) ((long) (t + 0) * (long) (thetaRowCount) / (long) noThreads);
@@ -124,7 +123,7 @@ GradientParameter* Fmincg::calculate(int noThreads, int thetaRowCount, int numbe
 
 	float A = 0.0;
 	float B = 0.0;
-	int iter = abs(maxIterations);
+	int iter = abs(params->getMaxIteration());
 
 	while (i < iter) {
 		i++;
@@ -253,12 +252,12 @@ GradientParameter* Fmincg::calculate(int noThreads, int thetaRowCount, int numbe
 			f1 = f2;
 			results.push_back(f1);
 
-			if (i != 1 && ((i & (steps - 1)) == 0)) {
+			if (i != 1 && ((i & (params->steps() - 1)) == 0)) {
 				printf("\n Next success cost: [[ %0.22f ]] total [[ %i ]] iteration and [[ %i ]] neural calculation complete", f1, i, n);
-				float *testXlist = &(aList[(ySize) * xColumnSize]);
-				float *testYlist = &(yTemp[ySize]);
+				float *testXlist = &(aList[(params->getRowCount()) * params->getColumnCount()]);
+				float *testYlist = &(yTemp[params->getRowCount()]);
 				neuralNetwork->predict(testRows, testXlist, x, testYlist);
-				if (save) {
+				if (params->saveThetasEnabled()) {
 					IOUtils::saveThetas(x, thetaRowCount);
 				}
 			}

@@ -19,7 +19,7 @@
 
 #ifndef SRC_NEURALNETWORK_H_
 #define SRC_NEURALNETWORK_H_
-#include "GradientParameter.h"
+#include "ApplicationParameters.h"
 #include <pthread.h>
 
 struct loop {
@@ -83,7 +83,6 @@ private:
 	float yf;
 	float lyf;
 	float tyf;
-	float lambda;
 	int **dMatrixDimensions;
 	int *dLayerCache;
 	int *nLayerCache;
@@ -106,7 +105,7 @@ private:
 public:
 	struct stData *stDatas;
 	float *deltas;
-	NeuralNetwork(int noThreads, float *alist, float *blist, int layerCount, int *neuronCounts, int numberOfLabels, int ySize, int xColumnSize, float l);
+	NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, int *neuronCounts);
 	float calculateBackCostWithThetas(float *thetas);
 	static void* calculateBackCost(void *dat);
 	static void calculateCost(struct stData *data);

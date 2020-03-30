@@ -114,14 +114,12 @@ int main(int argc, char **argv) {
 		tList = IOUtils::getArray(params->getThetasPat(), thetaRowCount, 1);
 
 		//start iteration
-		gd = Fmincg::calculate(params->getNumberOfThreads(), thetaRowCount, params->getNumberOfLabels(), params->getMaxIteration(), xlist, params->getRowCount(), params->getColumnCount(), ylist,
-				params->getTotalLayerCount(), neuronCount, params->getLambda(), tList, yTemp, testRows, params->steps(), params->saveThetasEnabled());
+		gd = Fmincg::calculate(params, thetaRowCount, xlist, ylist, neuronCount, tList, yTemp, testRows);
 
 	} else {
 
 		//start iteration
-		gd = Fmincg::calculate(thetaRowCount, params->getNumberOfThreads(), params->getNumberOfLabels(), params->getMaxIteration(), xlist, params->getRowCount(), params->getColumnCount(), ylist,
-				params->getTotalLayerCount(), neuronCount, params->getLambda(), yTemp, testRows, params->steps(), params->saveThetasEnabled());
+		gd = Fmincg::calculate(params, thetaRowCount, xlist, ylist, neuronCount, yTemp, testRows);
 	}
 	clock_gettime(CLOCK_MONOTONIC, &tend);
 
