@@ -67,8 +67,6 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 
 	float *x = tList;
 	int noThreads = params->getNumberOfThreads();
-	unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
-	int threadBarrier = concurentThreadsSupported - noThreads;
 	neuralNetwork = new NeuralNetwork(params, aList, yList, neuronCounts);
 	int i = 0;
 	int ls_failed = 0;   // no previous line search has failed
@@ -83,8 +81,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 	float *df2 = new float[thetaRowCount];
 	struct stData *fParam = neuralNetwork->stDatas;
 
-	for (int a = concurentThreadsSupported - 1; a >= threadBarrier; a--) {
-		int t = a - threadBarrier;
+	for (int t = noThreads - 1; t >= 0; t--) {
 		int loopmin = (int) ((long) (t + 0) * (long) (thetaRowCount) / (long) noThreads);
 		int loopmax = (int) ((long) (t + 1) * (long) (thetaRowCount) / (long) noThreads);
 		int length = loopmax - loopmin;

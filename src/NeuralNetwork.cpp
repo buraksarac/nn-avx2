@@ -664,8 +664,7 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 	return 0;
 }
 void NeuralNetwork::submitWork(int workType) {
-	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
-		int t = i - threadBarrier;
+	for (int t = numberOfThreads - 1; t >= 0; t--) {
 		if (stDatas[t].isMain) {
 			//if its last handle by main thread
 			stDatas[t].workType = workType;
@@ -679,8 +678,7 @@ void NeuralNetwork::submitWork(int workType) {
 		}
 
 	}
-	for (int i = concurentThreadsSupported - 1; i > threadBarrier; i--) {
-		int t = i - threadBarrier;
+	for (int t = numberOfThreads - 1; t > 0; t--) {
 		pthread_mutex_lock(&stDatas[t].mutex);
 		while (stDatas[t].workType != 0) {
 			pthread_cond_wait(&stDatas[t].completeCond, &stDatas[t].mutex);
@@ -695,8 +693,7 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 //create params for each thread
 
 	float cost = 0.0f;
-	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
-		int t = i - threadBarrier;
+	for (int t = numberOfThreads - 1; t >= 0; t--) {
 		stDatas[t].thetas = thetas;
 		stDatas[t].cost = 0.0f;
 		stDatas[t].calculatedDeltas = &(deltas[stDatas[t].tloopmin]);
@@ -711,8 +708,7 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		}
 
 	}
-	for (int i = concurentThreadsSupported - 1; i > threadBarrier; i--) {
-		int t = i - threadBarrier;
+	for (int t = numberOfThreads - 1; t > 0; t--) {
 		pthread_mutex_lock(&stDatas[t].mutex);
 		while (stDatas[t].workType != 0) {
 			pthread_cond_wait(&stDatas[t].completeCond, &stDatas[t].mutex);
@@ -734,7 +730,7 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		}
 		deltas[l] *= yf;
 		deltas[l] = dc > 0 ? fma(lyf, thetas[l], deltas[l]) : deltas[l];
-		thetaSum += dc > 0 ? pow(thetas[l],2)   : 0;
+		thetaSum += dc > 0 ? pow(thetas[l], 2) : 0;
 		da += (l + 1) == dLayerCache[da + 1];
 	}
 
