@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
 	}
 
 	//collect layer item infos in an array
-	int *neuronCount = new int[params->getTotalLayerCount()];
+	int *neuronCount = (int*) malloc(sizeof(int) * params->getTotalLayerCount());
 	neuronCount[0] = params->getColumnCount();
 	for (int j = 1; j < params->getTotalLayerCount() - 1; ++j) {
 		neuronCount[j] = params->getHiddenLayerSize()[j - 1];
@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
 	}
 	neuralNetwork->~NeuralNetwork();
 	free(yTemp);
-	delete[] neuronCount;
+	free(neuronCount);
 	delete gd;
 	delete params;
 	printf("\nFinish!\n");

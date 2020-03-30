@@ -22,9 +22,7 @@
 #include "GradientParameter.h"
 #include <pthread.h>
 
-
-
-struct loop{
+struct loop {
 	int loopMin;
 	int loopMax;
 };
@@ -54,6 +52,25 @@ struct stData {
 	pthread_cond_t completeCond;
 	pthread_mutex_t mutex;
 	int workType;
+	//fmin params
+	float *x;
+	float *x0;
+	float *df1;
+	float *df0;
+	float z1;
+	float *s;
+	float *df2;
+	float d1;
+	float d2;
+	float z2;
+	float sum1;
+	float sum2;
+	float sum3;
+	float p;
+	int size;
+	int end;
+	int isMain;
+	float* calculatedDeltas;
 };
 class NeuralNetwork {
 private:
@@ -77,23 +94,27 @@ private:
 	int errorSize;
 	int deltaSize;
 	int mDeltaSize;
-	float *deltas;
+
 	int xColumns;
 	float *xList;
 	float *yList;
 	int numberOfThreads;
-	struct stData *stDatas;
+
 	pthread_t *threads;
 	int threadBarrier;
 public:
+	struct stData *stDatas;
+	float *deltas;
 	NeuralNetwork(int noThreads, float *alist, float *blist, int layerCount, int *neuronCounts, int numberOfLabels, int ySize, int xColumnSize, float l);
-	GradientParameter* calculateBackCostWithThetas(float *thetas);
+	float calculateBackCostWithThetas(float *thetas);
 	static void* calculateBackCost(void *dat);
-	static void calculateBackCost(struct stData *data);
+	static void calculateCost(struct stData *data);
 	float* forwardPropogate(int aListIndex, float *tList, float *xList);
 	void predict(float *tList, float *yTemp);
 	void predict(int rows, float *xlist, float *tList, float *yTemp);
+	void submitWork(int workType);
 	float* forwardPropogate(float *tList, float *xList);
+	static void handleWork(stData *param);
 	virtual ~NeuralNetwork();
 };
 
