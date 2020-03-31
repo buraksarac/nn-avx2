@@ -121,7 +121,8 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 	float A = 0.0;
 	float B = 0.0;
 	int iter = abs(params->getMaxIteration());
-
+	float *testXlist = &(aList[(params->getRowCount()) * params->getColumnCount()]);
+	float *testYlist = &(yTemp[params->getRowCount()]);
 	while (i < iter) {
 		i++;
 		//lets start
@@ -251,8 +252,6 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 
 			if (i != 1 && ((i & (params->steps() - 1)) == 0)) {
 				printf("\n Next success cost: [[ %0.22f ]] total [[ %i ]] iteration and [[ %i ]] neural calculation complete", f1, i, n);
-				float *testXlist = &(aList[(params->getRowCount()) * params->getColumnCount()]);
-				float *testYlist = &(yTemp[params->getRowCount()]);
 				neuralNetwork->predict(testRows, testXlist, x, testYlist);
 				if (params->saveThetasEnabled()) {
 					IOUtils::saveThetas(x, thetaRowCount);
