@@ -35,7 +35,6 @@ static const __m256 ones = _mm256_set1_ps(1);
 static const __m256 zeros = _mm256_set1_ps(0);
 static const __m256 V_ALL_SET = _mm256_set1_ps(-1);
 #define E exp(1.0)
-static const unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
 NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, int *nCounts) {
 
 	numberOfThreads = params->getNumberOfThreads();
@@ -62,10 +61,9 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 	lyf = params->getLambda() / ySizefloat;
 	tyf = params->getLambda() / (2.0f * ySizefloat);
 
-	numberOfThreads = numberOfThreads > concurentThreadsSupported ? concurentThreadsSupported : numberOfThreads;
 	stDatas = (struct stData*) malloc(sizeof(struct stData) * numberOfThreads);
 	threads = (pthread_t*) malloc(sizeof(pthread_t) * numberOfThreads - 1);
-	threadBarrier = concurentThreadsSupported - numberOfThreads;
+	threadBarrier = params->getCpus() - numberOfThreads;
 
 	//we need rowcount in float value for calculation
 
@@ -89,7 +87,7 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 
 	mDeltaSize = sizeof(float) * deltaSize;
 	deltas = (float*) malloc(sizeof(float) * 1);
-	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
+	for (int i = params->getCpus() - 1; i >= threadBarrier; i--) {
 		int t = i - threadBarrier;
 		int isMain = t == 0;
 		int loopmin = (int) ((long) (t + 0) * (long) (ySize) / (long) numberOfThreads);
@@ -115,10 +113,11 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 		stDatas[t].loopMin = loopmin;
 		stDatas[t].loopMax = loopmax;
 		stDatas[t].workType = 0;
-		stDatas[t].mutex = PTHREAD_MUTEX_INITIALIZER;
-		stDatas[t].completeCond = PTHREAD_COND_INITIALIZER;
-		stDatas[t].waitCond = PTHREAD_COND_INITIALIZER;
+
 		if (!stDatas[t].isLast) {
+			stDatas[t].mutex = PTHREAD_MUTEX_INITIALIZER;
+			stDatas[t].completeCond = PTHREAD_COND_INITIALIZER;
+			stDatas[t].waitCond = PTHREAD_COND_INITIALIZER;
 			pthread_create(&threads[t], NULL, calculateBackCost, (void*) &(stDatas[t]));
 			cpu_set_t cpuset;
 			CPU_ZERO(&cpuset);
@@ -132,8 +131,7 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 }
 
 NeuralNetwork::~NeuralNetwork() {
-	for (int i = concurentThreadsSupported - 1; i >= threadBarrier; i--) {
-		int t = i - threadBarrier;
+	for (int t = numberOfThreads - 1; t >= 0; t--) {
 		if (!stDatas[t].isLast) {
 			pthread_mutex_lock(&stDatas[t].mutex);
 			stDatas[t].workType = -1;
@@ -142,8 +140,7 @@ NeuralNetwork::~NeuralNetwork() {
 		}
 
 	}
-	for (int i = concurentThreadsSupported - 1; i > threadBarrier; i--) {
-		int t = i - threadBarrier;
+	for (int t = numberOfThreads - 1; t > 0; t--) {
 		pthread_join(threads[t], NULL);
 		pthread_mutex_destroy(&stDatas[t].mutex);
 		pthread_cond_destroy(&stDatas[t].waitCond);

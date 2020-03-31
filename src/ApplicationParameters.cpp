@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-
+#include <thread>
 /*
  * Pojo class to hold application parameters and validate
  */
@@ -37,6 +37,8 @@ void ApplicationParameters::printHelp() {
 	printf("\n-j\tNumber of cores(threads) on host pc\n");
 	printf("\n-i\tNumber of iteration for training\n");
 	printf("\n-l\tLambda value\n");
+	printf(
+			"\n-cpus\tTotal cpu count on system, if system not able to report total numbers due to isolation set this number to actual total, still -j parameter will be considered but this param will make affinity reliable\n");
 	printf("\n-f\tScale inputs for featured list, 0 or 1, optional, default 0)\n");
 	printf("\n-p\tDo prediction for each input after training complete (0 for disable 1 for enable default 1)\n");
 	printf("\n-tp\tTheta path. If you have previously saved a prediction result you can continue"
@@ -63,6 +65,7 @@ void ApplicationParameters::validateInputs(int argc, char **argv) {
 	this->valid = 1;
 	this->testPercentage = 0;
 	this->predictionStep = 32;
+	this->cpus = std::thread::hardware_concurrency();
 
 	//Check param size is a odd value
 	if ((argc % 1) != 0) {
@@ -118,6 +121,10 @@ void ApplicationParameters::validateInputs(int argc, char **argv) {
 				this->valid = 0;
 			}
 			this->validCount++;
+		} else if (!strcmp(argv[i], "-cpus")) {
+
+			this->cpus = atoi(argv[i + 1]); //row count of x or y list
+
 		} else if (!strcmp(argv[i], "-ps")) {
 
 			this->predictionStep = atoi(argv[i + 1]); //row count of x or y list
@@ -288,5 +295,9 @@ void ApplicationParameters::setRowCount(int count) {
 
 int ApplicationParameters::steps() {
 	return this->predictionStep;
+}
+
+int ApplicationParameters::getCpus(){
+	return this->cpus;
 }
 

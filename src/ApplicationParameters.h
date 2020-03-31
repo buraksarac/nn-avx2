@@ -35,6 +35,7 @@ private:
 	int valid;
 	int testPercentage;
 	int predictionStep;
+	int cpus;
 
 	void validateInputs(int argc, char **argv);
 public:
@@ -101,6 +102,7 @@ public:
 
 	int steps();
 
+	int getCpus();
 };
 
 #endif /* APPLICATIONPARAMETERS_H_ */
