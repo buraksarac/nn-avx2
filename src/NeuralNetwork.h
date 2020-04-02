@@ -102,17 +102,17 @@ private:
 	int threadBarrier;
 public:
 	struct stData *stDatas;
-	float *deltas;
+	float  *deltas;
 	NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, int *neuronCounts);
 	float calculateBackCostWithThetas(float *thetas);
-	static void* calculateBackCost(void *dat);
-	static void calculateCost(struct stData *data);
+	static inline  void* calculateBackCost(void *dat);
+	static inline  void calculateCost(struct stData *data);
 	float* forwardPropogate(int aListIndex, float *tList, float *xList);
 	void predict(float *tList, float *yTemp);
 	void predict(int rows, float *xlist, float *tList, float *yTemp);
 	void submitWork(int workType);
 	float* forwardPropogate(float *tList, float *xList);
-	static void handleWork(stData *param);
+	static inline  void handleWork(stData *param);
 	virtual ~NeuralNetwork();
 };
 

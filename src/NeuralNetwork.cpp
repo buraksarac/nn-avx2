@@ -26,6 +26,7 @@
 #include "x86intrin.h"
 #include <thread>
 #include <sys/time.h>
+#include <xmmintrin.h>
 using namespace std;
 
 typedef std::numeric_limits<float> lim_dbl;
@@ -36,7 +37,8 @@ static const __m256 zeros = _mm256_set1_ps(0);
 static const __m256 V_ALL_SET = _mm256_set1_ps(-1);
 #define E exp(1.0)
 NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, int *nCounts) {
-
+	_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+	_mm_setcsr(_mm_getcsr() | 0x8040);
 	numberOfThreads = params->getNumberOfThreads();
 	xList = alist;
 	yList = blist;
@@ -161,20 +163,20 @@ NeuralNetwork::~NeuralNetwork() {
 
 }
 
-float _mulAdd(float *a, float *b) {
+static inline float _mulAdd(float *a, float *b) {
 	__m256 va = _mm256_loadu_ps(a);
 	__m256 vb = _mm256_loadu_ps(b);
 	return sum8(_mm256_mul_ps(va, vb));
 }
 
-void _mulAddBroadcast(float *d, float *e, float *n) {
+static inline void _mulAddBroadcast(float *d, float *e, float *n) {
 	__m256 vd = _mm256_loadu_ps(d);
 	__m256 vn = _mm256_loadu_ps(n);
 	__m256 ve = _mm256_broadcast_ss(e);
 	_mm256_storeu_ps(d, _mm256_macc_ps(ve, vn, vd));
 }
 
-float _sums(float *ylist, float *neurons) {
+static inline float _sums(float *ylist, float *neurons) {
 
 	__m256 y = _mm256_loadu_ps(ylist);
 	__m256 n = _mm256_loadu_ps(neurons);
@@ -184,48 +186,40 @@ float _sums(float *ylist, float *neurons) {
 	return sum8(res);
 }
 
-void _mulFmaddStore(float *a, float *b, float *c) {
-	__m256 va = _mm256_loadu_ps(a);
-	__m256 vb = _mm256_loadu_ps(b);
-	__m256 vc = _mm256_loadu_ps(c);
-	_mm256_storeu_ps(c, _mm256_macc_ps(va, vb, vc));
-
-}
-
-float _mulFmaddStore1(float *a) {
+static inline float _mulFmaddStore1(float *a) {
 	__m256 va = _mm256_loadu_ps(a);
 	__m256 vres = _mm256_mul_ps(va, va);
 	return sum8(_mm256_mul_ps(V_ALL_SET, vres));
 }
-float _mulFmaddStore2(float *a, float *b) {
+static inline float _mulFmaddStore2(float *a, float *b) {
 	__m256 va = _mm256_loadu_ps(a);
 	__m256 vb = _mm256_loadu_ps(b);
 	return sum8(_mm256_mul_ps(va, vb));
 }
-void _mulNegate(float *a, float *d) {
+static inline void _mulNegate(float *a, float *d) {
 	__m256 va = _mm256_loadu_ps(a);
 	__m256 vres = _mm256_mul_ps(va, V_ALL_SET);
 	_mm256_storeu_ps(d, vres);
 }
-void _mcopy(float *a, float *b) {
+static inline void _mcopy(float *a, float *b) {
 	__m256 buffer = _mm256_loadu_ps(a);
 	_mm256_storeu_ps(b, buffer);
 }
 
-void _mulSub(float *a, float *b, float *c) {
+static inline void _mulSub(float *a, float *b, float *c) {
 	__m256 va = _mm256_broadcast_ss(a);
 	__m256 vb = _mm256_loadu_ps(b);
 	__m256 vc = _mm256_loadu_ps(c);
 	_mm256_storeu_ps(b, _mm256_msub_ps(va, vb, vc));
 }
-void _mswap(float *a, float *b) {
+static inline void _mswap(float *a, float *b) {
 	__m256 va = _mm256_loadu_ps(a);
 	__m256 vb = _mm256_loadu_ps(b);
 	_mm256_storeu_ps(a, vb);
 	_mm256_storeu_ps(b, va);
 }
 
-void fWork1(stData *param) {
+static inline void fWork1(stData *param) {
 
 	for (int r = 0; r < param->size; r += 8) {
 		_mcopy(&param->x[r], &param->x0[r]);
@@ -241,7 +235,7 @@ void fWork1(stData *param) {
 
 }
 
-void fWork2(stData *param) {
+static inline void fWork2(stData *param) {
 	param->d2 = 0.0;
 	for (int r = 0; r < param->size; r += 8) {
 		_mcopy(&(param->calculatedDeltas[r]), &param->df2[r]);
@@ -253,7 +247,7 @@ void fWork2(stData *param) {
 	}
 }
 
-void fWork3(stData *param) {
+static inline void fWork3(stData *param) {
 	for (int r = 0; r < param->size; r += 8) {
 		_mulAddBroadcast(&param->x[r], &param->z2, &param->s[r]);
 	}
@@ -262,7 +256,7 @@ void fWork3(stData *param) {
 	}
 }
 
-void fWork4(stData *param) {
+static inline void fWork4(stData *param) {
 	param->d2 = 0.0;
 	for (int r = 0; r < param->size; r += 8) {
 		_mcopy(&(param->calculatedDeltas[r]), &param->df2[r]);
@@ -274,7 +268,7 @@ void fWork4(stData *param) {
 	}
 }
 
-void fWork5(stData *param) {
+static inline void fWork5(stData *param) {
 	for (int r = 0; r < param->size; r += 8) {
 		_mulAddBroadcast(&param->x[r], &param->z2, &param->s[r]);
 	}
@@ -283,7 +277,7 @@ void fWork5(stData *param) {
 	}
 }
 
-void fWork6(stData *param) {
+static inline void fWork6(stData *param) {
 	param->d2 = 0.0;
 	for (int r = 0; r < param->size; r += 8) {
 		_mcopy(&(param->calculatedDeltas[r]), &param->df2[r]);
@@ -295,7 +289,7 @@ void fWork6(stData *param) {
 	}
 }
 
-void fWork7(stData *param) {
+static inline void fWork7(stData *param) {
 	param->sum1 = 0.0;
 	param->sum2 = 0.0;
 	param->sum3 = 0.0;
@@ -311,7 +305,7 @@ void fWork7(stData *param) {
 	}
 }
 
-void fWork8(stData *param) {
+static inline void fWork8(stData *param) {
 	param->d2 = 0.0;
 	for (int r = 0; r < param->size; r += 8) {
 		_mulSub(&param->p, &param->s[r], &param->df2[r]);
@@ -327,7 +321,7 @@ void fWork8(stData *param) {
 	}
 }
 
-void fWork9(stData *param) {
+static inline void fWork9(stData *param) {
 	param->d2 = 0.0;
 	for (int r = 0; r < param->size; r += 8) {
 		_mulNegate(&param->df1[r], &param->s[r]);
@@ -339,7 +333,7 @@ void fWork9(stData *param) {
 	}
 }
 
-void fWork10(stData *param) {
+static inline void fWork10(stData *param) {
 	for (int r = 0; r < param->size; r += 8) {
 		_mcopy(&param->x0[r], &param->x[r]);
 		_mcopy(&param->df0[r], &param->df1[r]);
@@ -350,7 +344,7 @@ void fWork10(stData *param) {
 	}
 }
 
-void fWork11(stData *param) {
+static inline void fWork11(stData *param) {
 	param->d1 = 0.0;
 	for (int r = 0; r < param->size; r += 8) {
 		_mswap(&param->df1[r], &param->df2[r]);
@@ -366,7 +360,7 @@ void fWork11(stData *param) {
 	}
 }
 
-void fWork13(stData *param) {
+static inline void fWork13(stData *param) {
 	param->d1 = 0.0;
 	for (int r = 0; r < param->size; r += 8) {
 		_mcopy(&(param->calculatedDeltas[r]), &(param->df1[r]));
