@@ -41,6 +41,7 @@ void ApplicationParameters::printHelp() {
 			"\n-cpus\tTotal cpu count on system, if system not able to report total numbers due to isolation set this number to actual total, still -j parameter will be considered but this param will make affinity reliable\n");
 	printf("\n-f\tScale inputs for featured list, 0 or 1, optional, default 0)\n");
 	printf("\n-p\tDo prediction for each input after training complete (0 for disable 1 for enable default 1)\n");
+	printf("\n-rand\tDont create random init weights (for debugging always x iteration will result same (default 1)))\n");
 	printf("\n-tp\tTheta path. If you have previously saved a prediction result you can continue"
 			"\n\tfrom this result by loading from file path. (-lt value should be 1)\n");
 	printf("\n-lt\tLoad previously saved thetas (prediction result)"
@@ -66,6 +67,7 @@ void ApplicationParameters::validateInputs(int argc, char **argv) {
 	this->testPercentage = 0;
 	this->predictionStep = 32;
 	this->cpus = std::thread::hardware_concurrency();
+	this->random = 1;
 
 	//Check param size is a odd value
 	if ((argc % 1) != 0) {
@@ -121,6 +123,10 @@ void ApplicationParameters::validateInputs(int argc, char **argv) {
 				this->valid = 0;
 			}
 			this->validCount++;
+		} else if (!strcmp(argv[i], "-rand")) {
+
+			this->random = atoi(argv[i + 1]); //row count of x or y list
+
 		} else if (!strcmp(argv[i], "-cpus")) {
 
 			this->cpus = atoi(argv[i + 1]); //row count of x or y list
@@ -297,7 +303,10 @@ int ApplicationParameters::steps() {
 	return this->predictionStep;
 }
 
-int ApplicationParameters::getCpus(){
+int ApplicationParameters::getCpus() {
 	return this->cpus;
 }
 
+int ApplicationParameters::isRandom(){
+	return this->random;
+}
