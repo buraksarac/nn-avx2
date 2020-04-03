@@ -42,10 +42,8 @@ void ApplicationParameters::printHelp() {
 	printf("\n-f\tScale inputs for featured list, 0 or 1, optional, default 0)\n");
 	printf("\n-p\tDo prediction for each input after training complete (0 for disable 1 for enable default 1)\n");
 	printf("\n-rand\tDont create random init weights (for debugging always x iteration will result same (default 1)))\n");
-	printf("\n-tp\tTheta path. If you have previously saved a prediction result you can continue"
+	printf("\n-tp\tTheta path. If you have previously saved a prediction result you can continue, Load previously saved thetas (prediction result)"
 			"\n\tfrom this result by loading from file path. (-lt value should be 1)\n");
-	printf("\n-lt\tLoad previously saved thetas (prediction result)"
-			"\n\t(0 for disable 1 for enable default 0) (-tp needs to be set)\n");
 	printf("\n-st\tSave thetas (prediction result)(0 for disable 1 for enable default 1)\n");
 	printf("\n-test\tTest percentage, i.e. for 1000 row of data, 10 will result, 900 of row for training and 100 for test\n");
 	printf(
@@ -196,14 +194,9 @@ void ApplicationParameters::validateInputs(int argc, char **argv) {
 			this->predict = atoi(argv[i + 1]);
 		} else if (!strcmp(argv[i], "-tp")) {
 			this->tPath = argv[i + 1];
+			this->loadThetas = 1;
 			if (!IOUtils::fileExist(this->tPath)) {
 				printf("-t parameter %s file doesnt exist!", tPath.c_str());
-				this->valid = 0;
-			}
-		} else if (!strcmp(argv[i], "-lt")) {
-			this->loadThetas = atoi(argv[i + 1]);
-			if (!(this->loadThetas == 0 || this->loadThetas == 1)) {
-				printf("loadThetas should be 1 or 0");
 				this->valid = 0;
 			}
 		} else if (!strcmp(argv[i], "-st")) {
@@ -217,6 +210,14 @@ void ApplicationParameters::validateInputs(int argc, char **argv) {
 			this->valid = 0;
 		}
 
+	}
+
+	if (this->testPercentage >= 100) {
+		this->maxIteration = 1;
+		if (!this->loadThetas) {
+			printf("You have set test 100 (meaning only test) but no -tp param specified");
+			this->valid = 0;
+		}
 	}
 
 	//make sure all 7 required params set
@@ -307,6 +308,6 @@ int ApplicationParameters::getCpus() {
 	return this->cpus;
 }
 
-int ApplicationParameters::isRandom(){
+int ApplicationParameters::isRandom() {
 	return this->random;
 }

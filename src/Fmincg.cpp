@@ -252,7 +252,12 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 
 			if (i != 1 && ((i & (params->steps() - 1)) == 0)) {
 				printf("\n Next success cost: [[ %0.22f ]] total [[ %i ]] iteration and [[ %i ]] neural calculation complete", f1, i, n);
-				neuralNetwork->predict(testRows, testXlist, x, testYlist);
+
+				if (params->getTestPercentage() == 0) {
+					neuralNetwork->predict(x, yTemp);
+				}  else {
+					neuralNetwork->predict(testRows, testXlist, x, testYlist);
+				}
 				if (params->saveThetasEnabled()) {
 					IOUtils::saveThetas(x, thetaRowCount);
 				}

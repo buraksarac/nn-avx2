@@ -80,13 +80,13 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	int testRows = 0;
-	if (params->getTestPercentage() != 0) {
+	int testRows = params->getRowCount();
+	if (params->getTestPercentage() > 0) {
 		testRows = (params->getTestPercentage() * params->getRowCount()) / 100;
 		params->setRowCount(params->getRowCount() - testRows);
-		printf("\n\n Total %i rows will be trained \n", params->getRowCount());
-		printf("\n\n Total %i rows will be tested \n", testRows);
 	}
+	printf("\n\n Total %i rows will be trained \n", params->getRowCount());
+	printf("\n\n Total %i rows will be tested \n", testRows);
 
 	//collect layer item infos in an array
 	int *neuronCount = (int*) malloc(sizeof(int) * params->getTotalLayerCount());
@@ -106,37 +106,49 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	GradientParameter *gd;
-	clock_gettime(CLOCK_MONOTONIC, &tstart);
+	GradientParameter *gd = NULL;
+
 	//check if user will continue from previously saved training data
-	if (params->loadThetasEnabled()) {
-		//load thetas
-		tList = IOUtils::getArray(params->getThetasPat(), thetaRowCount, 1);
+	if (params->getRowCount() > 0) {
+		clock_gettime(CLOCK_MONOTONIC, &tstart);
+		if (params->loadThetasEnabled()) {
+			//load thetas
+			tList = IOUtils::getArray(params->getThetasPat(), thetaRowCount, 1);
+			//start iteration
+			gd = Fmincg::calculate(params, thetaRowCount, xlist, ylist, neuronCount, tList, yTemp, testRows);
 
-		//start iteration
-		gd = Fmincg::calculate(params, thetaRowCount, xlist, ylist, neuronCount, tList, yTemp, testRows);
-
-	} else {
-
-		//start iteration
-		gd = Fmincg::calculate(params, thetaRowCount, xlist, ylist, neuronCount, yTemp, testRows);
-	}
-	clock_gettime(CLOCK_MONOTONIC, &tend);
-
-	printf("\n\n\t\t >>>>Process took: %.5f second<<<< \n", ((float) tend.tv_sec + 1.0e-9 * tend.tv_nsec) - ((float) tstart.tv_sec + 1.0e-9 * tstart.tv_nsec));
-
-	NeuralNetwork *neuralNetwork = Fmincg::getNN();
-	if (params->isCrossPredictionEnabled() && gd->getCosts().size() > 0) {
-		printf("\n Final Prediction will start. Calculated cost: %0.50f", gd->getCosts().back());
-		if (params->getTestPercentage() == 0) {
-			neuralNetwork->predict(gd->getThetas(), yTemp);
 		} else {
+
+			//start iteration
+			gd = Fmincg::calculate(params, thetaRowCount, xlist, ylist, neuronCount, yTemp, testRows);
+		}
+		clock_gettime(CLOCK_MONOTONIC, &tend);
+
+		printf("\n\n\t\t >>>>Process took: %.5f second<<<< \n", ((float) tend.tv_sec + 1.0e-9 * tend.tv_nsec) - ((float) tstart.tv_sec + 1.0e-9 * tstart.tv_nsec));
+
+	}
+
+	NeuralNetwork *neuralNetwork = NULL;
+	if (params->isCrossPredictionEnabled()) {
+
+		if (params->getTestPercentage() == 0 && gd->getCosts().size() > 0) {
+			printf("\n Final Prediction will start. Calculated cost: %0.50f", gd->getCosts().back());
+			neuralNetwork = Fmincg::getNN();
+			neuralNetwork->predict(gd->getThetas(), yTemp);
+		} else if (params->getTestPercentage() >= 100) {
+			printf("\n Prediction will start. ");
+			tList = IOUtils::getArray(params->getThetasPat(), thetaRowCount, 1);
+			neuralNetwork = new NeuralNetwork(params, xlist, ylist, neuronCount);
+			neuralNetwork->predict(testRows, xlist, tList, yTemp);
+		} else if (gd->getCosts().size() > 0) {
+			printf("\n Final Prediction will start. Calculated cost: %0.50f", gd->getCosts().back());
+			neuralNetwork = Fmincg::getNN();
 			float *testXlist = &(xlist[(params->getRowCount()) * params->getColumnCount()]);
 			float *testYlist = &(yTemp[params->getRowCount()]);
 			neuralNetwork->predict(testRows, testXlist, gd->getThetas(), testYlist);
 		}
 	}
-	//Save thetas if requested
+//Save thetas if requested
 	if (params->saveThetasEnabled()) {
 		IOUtils::saveThetas(gd->getThetas(), thetaRowCount);
 	}

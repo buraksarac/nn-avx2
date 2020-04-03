@@ -105,6 +105,7 @@ public:
 
 	int getCpus();
 	int isRandom();
+
 };
 
 #endif /* APPLICATIONPARAMETERS_H_ */

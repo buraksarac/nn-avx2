@@ -96,7 +96,9 @@ void IOUtils::saveThetas(float *thetas, lint size) {
 	sstm << fileName << tstart.tv_sec << tstart.tv_nsec << ".dat";
 
 	ofstream f(sstm.str().c_str());
+	f.precision(10);
 	copy(thetas, thetas + size, ostream_iterator<float>(f, "\n"));
+	f.close();
 	printf("\t\t|\n\t\t\\__Thetas (%s) has been saved into project folder.\n", sstm.str().c_str());
 }
 
