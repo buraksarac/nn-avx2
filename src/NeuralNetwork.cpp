@@ -501,7 +501,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				if (isLast) {
 					sum += _sums(&yList[yCache + j], &neurons[nCache1 + j]);
 				}
-				int index = i == 0 ? j + 1 : j;
+				int index = isLast ? j : j + 1;
 				int m = j;
 				float eVal = e[index++];
 				float eVal2 = e[index++];
@@ -545,7 +545,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 
 			for (int a = siz; a < n1; a++) {
 				sum += isLast ? -(yList[yCache + a] * log(neurons[nCache1 + a])) - ((1 - yList[yCache + a]) * log(1 - neurons[nCache1 + a])) : 0;
-				int index = i == 0 ? a + 1 : a;
+				int index = isLast ? a : a + 1;
 				float eVal = e[index];
 				float *d2 = &(d[mi * a]);
 				int size = n2 - (n2 & 7);
