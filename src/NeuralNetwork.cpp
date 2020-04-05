@@ -458,8 +458,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 					errors[row] = nVal - y[j];
 				} else {
 					int nCounts = neuronCounts[i + 2];
-					int isLast = nCounts - 1;
-					float sigmoid = (nVal * (1 - nVal));
+
 					float *t2 = &(t[j]);
 					int siz = nCounts - (nCounts & 3);
 					int val = dMatrixInfo[iNext][1];
@@ -473,9 +472,9 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 
 					for (int a = siz; a < nCounts; a++) {
 						errors[row] = fma(t2[val * a], e[a], errors[row]);
-
-						errors[row] = a == isLast ? errors[row] * sigmoid : errors[row];
 					}
+					errors[row] *= (nVal * (1 - nVal));
+
 				}
 
 			}
