@@ -408,11 +408,18 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 
 			int previousLayer = nLayerCache[l];
 			bool isLast = l == (layerCount - 1);
-
+			int lPrev = l - 1;
+			int dCache = dlayerCache[l - 1];
+			int nCounts = neuronCounts[lPrev] + 1;
+			int siz = nCounts - (nCounts & 7);
 			int neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
+			int jPrev = 0;
+			int row = 0;
+			float *n = &(neurons[nLayerCache[lPrev]]);
+
 			for (int j = 0; j < neuronSize; j++) {
-				int jPrev = j - 1;
-				int row = previousLayer + j;
+				jPrev = j - 1;
+				row = previousLayer + j;
 				neurons[row] = .0f;
 
 				if (j == 0 && !isLast) {
@@ -420,11 +427,6 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				} else if (l == 0) {
 					neurons[row] = x[jPrev];
 				} else {
-					int lPrev = l - 1;
-					int dCache = dlayerCache[l - 1];
-					int nCounts = neuronCounts[lPrev] + 1;
-					int siz = nCounts - (nCounts & 7);
-					float *n = &(neurons[nLayerCache[lPrev]]);
 					float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
 					for (int k = 0; k < siz; k = k + 8) {
 						neurons[row] += _mulAdd(&t[k], &n[k]);
@@ -444,24 +446,25 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			int neuronSize = i == layerCount - 2 ? neuronCounts[iNext] : neuronCounts[iNext] + 1;
 			int previousLayer = eLayerCache[i];
 			int nCache = nLayerCache[iNext];
-
+			int nCounts = neuronCounts[i + 2];
 			int dCache = dlayerCache[iNext];
 			int eCache = eLayerCache[iNext];
 			float *e = &(errors[eCache]);
 			float *t = &(thetas[dCache]);
+			int siz = nCounts - (nCounts & 3);
+			int val = dMatrixInfo[iNext][1];
+			int row = 0;
 			for (int j = neuronSize - 1; j >= 0; j--) {
-				int row = previousLayer + j;
+				row = previousLayer + j;
 
 				errors[row] = 0; //reset
 				float nVal = neurons[nCache + j];
 				if (i == layerCount - 2) {
 					errors[row] = nVal - y[j];
 				} else {
-					int nCounts = neuronCounts[i + 2];
 
 					float *t2 = &(t[j]);
-					int siz = nCounts - (nCounts & 3);
-					int val = dMatrixInfo[iNext][1];
+
 					for (int k = 0; k < siz; k = k + 4) {
 						errors[row] = fma(t2[val * k], e[k], errors[row]);
 						errors[row] = fma(t2[val * (k + 1)], e[k + 1], errors[row]);
@@ -484,8 +487,8 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 		float sum = 0.0;
 		for (int i = 0; i < layerCount - 1; i++) {
 			int iNext = i + 1;
-			int n1 = neuronCounts[iNext];
-			int n2 = neuronCounts[i] + 1;
+			int n1 = dMatrixInfo[i][0];
+			int n2 = dMatrixInfo[i][1];
 			int nCache1 = nLayerCache[iNext];
 			int eCache = eLayerCache[i];
 			int nCache = nLayerCache[i];
@@ -495,13 +498,12 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			int dCache = dlayerCache[i];
 			float *d = &(data->deltas[dCache]);
 			int siz = n1 - (n1 & 7);
-			int mi = dMatrixInfo[i][1];
 			for (int j = 0; j < siz; j = j + 8) {
+				int step = j * n2;
 				if (isLast) {
 					sum += _sums(&yList[yCache + j], &neurons[nCache1 + j]);
 				}
 				int index = isLast ? j : j + 1;
-				int m = j;
 				float eVal = e[index++];
 				float eVal2 = e[index++];
 				float eVal3 = e[index++];
@@ -510,14 +512,14 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				float eVal6 = e[index++];
 				float eVal7 = e[index++];
 				float eVal8 = e[index];
-				float *d2 = &(d[mi * m++]);
-				float *d22 = &(d[mi * m++]);
-				float *d23 = &(d[mi * m++]);
-				float *d24 = &(d[mi * m++]);
-				float *d25 = &(d[mi * m++]);
-				float *d26 = &(d[mi * m++]);
-				float *d27 = &(d[mi * m++]);
-				float *d28 = &(d[mi * m]);
+				float *d2 = &(d[step]);
+				float *d22 = &(d[step += n2]);
+				float *d23 = &(d[step += n2]);
+				float *d24 = &(d[step += n2]);
+				float *d25 = &(d[step += n2]);
+				float *d26 = &(d[step += n2]);
+				float *d27 = &(d[step += n2]);
+				float *d28 = &(d[step += n2]);
 				int size = n2 - (n2 & 7);
 				for (int k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d2[k], &eVal, &n[k]);
@@ -546,7 +548,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				sum += isLast ? -(yList[yCache + a] * log(neurons[nCache1 + a])) - ((1 - yList[yCache + a]) * log(1 - neurons[nCache1 + a])) : 0;
 				int index = isLast ? a : a + 1;
 				float eVal = e[index];
-				float *d2 = &(d[mi * a]);
+				float *d2 = &(d[n2 * a]);
 				int size = n2 - (n2 & 7);
 				for (int d = 0; d < size; d += 8) {
 					_mulAddBroadcast(&d2[d], &eVal, &n[d]);
