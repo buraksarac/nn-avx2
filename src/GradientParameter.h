@@ -26,13 +26,17 @@ class GradientParameter {
 private:
 	float* t;
 	float c;
+	int iterations;
+	int batches;
 	deque<float> cs;
 public:
-	GradientParameter(float* thetas,float cost);
-	GradientParameter(float* thetas, deque<float> costs);
+	GradientParameter(float* thetas,float cost,int iter,int batches);
+	GradientParameter(float* thetas, deque<float> costs,int iter,int batches);
 	virtual ~GradientParameter();
 	float* getThetas();
 	float getCost();
+	int getTotalIterations();
+	int getTotalBatches();
 	deque<float> getCosts();
 };
 

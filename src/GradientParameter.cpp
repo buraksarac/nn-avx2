@@ -22,16 +22,19 @@
 #include <stdlib.h>
 #include <deque>
 
-GradientParameter::GradientParameter(float* thetas, float cost) {
+GradientParameter::GradientParameter(float* thetas, float cost,int iter,int batch) {
 	t = thetas;
 	c = cost;
-
+	iterations = iter;
+	batches = batch;
 }
 
-GradientParameter::GradientParameter(float* thetas, deque<float> costs) {
+GradientParameter::GradientParameter(float* thetas, deque<float> costs,int iter,int batch) {
 	t = thetas;
 	cs = costs;
 	c = 0;
+	iterations = iter;
+	batches = batch;
 }
 
 GradientParameter::~GradientParameter() {
@@ -48,5 +51,13 @@ float GradientParameter::getCost() {
 
 deque<float> GradientParameter::getCosts() {
 	return cs;
+}
+
+int GradientParameter::getTotalIterations(){
+	return this->iterations;
+}
+
+int GradientParameter::getTotalBatches(){
+	return this->batches;
 }
 

@@ -251,11 +251,11 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 			results.push_back(f1);
 
 			if (i != 1 && ((i & (params->steps() - 1)) == 0)) {
-				printf("\n Next success cost: [[ %0.22f ]] total [[ %i ]] iteration and [[ %i ]] neural calculation complete", f1, i, n);
+				printf("\n Next success cost: [[ %0.22f ]] total [[ %i ]] iteration and [[ %i ]] full batch calculation complete", f1, i, n);
 
 				if (params->getTestPercentage() == 0) {
 					neuralNetwork->predict(x, yTemp);
-				}  else {
+				} else {
 					neuralNetwork->predict(testRows, testXlist, x, testYlist);
 				}
 				if (params->saveThetasEnabled()) {
@@ -332,7 +332,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 	delete[] df2;
 
 	//cleaning deltas is GradientParameter job now
-	return new GradientParameter(x, results);
+	return new GradientParameter(x, results, i, n);
 
 }
 

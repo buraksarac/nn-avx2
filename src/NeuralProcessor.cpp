@@ -124,7 +124,16 @@ int main(int argc, char **argv) {
 		}
 		clock_gettime(CLOCK_MONOTONIC, &tend);
 
-		printf("\n\n\t\t >>>>Process took: %.5f second<<<< \n", ((float) tend.tv_sec + 1.0e-9 * tend.tv_nsec) - ((float) tstart.tv_sec + 1.0e-9 * tstart.tv_nsec));
+		float took = ((float) tend.tv_sec + 1.0e-9 * tend.tv_nsec) - ((float) tstart.tv_sec + 1.0e-9 * tstart.tv_nsec);
+		printf("\n\n\t\t >>>>Process took: %.5f second<<<< \n", took);
+		float iTook = took / gd->getTotalIterations();
+		float bTook = took / gd->getTotalBatches();
+
+		printf("\n\tTotal batches:\t\t\t\t\t%d\n",gd->getTotalBatches());
+		printf("\tTotal iterations:\t\t\t\t%d\n",gd->getTotalIterations());
+
+		printf("\tTime per full batch of %d rows:\t\t%.6f\n",params->getRowCount(),bTook);
+		printf("\tTime per iteration (including failures):\t%.6f  \n",iTook);
 
 	}
 
