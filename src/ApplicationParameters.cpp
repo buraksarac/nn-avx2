@@ -15,7 +15,7 @@
 /*
  * Pojo class to hold application parameters and validate
  */
-ApplicationParameters::ApplicationParameters(int argc, char **argv) {
+ApplicationParameters::ApplicationParameters(llu argc, char **argv) {
 
 	validateInputs(argc, argv);
 
@@ -50,7 +50,7 @@ void ApplicationParameters::printHelp() {
 			"\n-ps\tPrediction step, has to be power of 2, for long running tasks you can enable this and -st parameter. I.e. -ps 16 will result every 16 iteration will run prediction against test and if -st 1 then also weights will be saved for this prediction, that later you can load back\n");
 	printf("\n");
 }
-void ApplicationParameters::validateInputs(int argc, char **argv) {
+void ApplicationParameters::validateInputs(llu argc, char **argv) {
 
 	//set default values
 	this->numberOfThreads = 1;
@@ -74,10 +74,10 @@ void ApplicationParameters::validateInputs(int argc, char **argv) {
 	}
 
 	//validate and set inputs
-	for (int i = 1; i < argc; i = i + 2) {
+	for (llu i = 1; i < argc; i = i + 2) {
 		if (!strcmp(argv[i], "--help")) {
 
-			printHelp(); //print help
+			printHelp(); //prllu help
 
 			this->valid = 0;
 		} else if (!strcmp(argv[i], "-x")) {
@@ -240,74 +240,74 @@ string ApplicationParameters::getThetasPat() {
 	return this->tPath;
 }
 
-int ApplicationParameters::getRowCount() {
+llu ApplicationParameters::getRowCount() {
 	return this->rowCount;
 }
 
-int ApplicationParameters::getColumnCount() {
+llu ApplicationParameters::getColumnCount() {
 	return this->colCount;
 }
 
-int ApplicationParameters::getNumberOfLabels() {
+llu ApplicationParameters::getNumberOfLabels() {
 	return this->numberOfLabels;
 }
 
-int ApplicationParameters::getNumberOfThreads() {
+llu ApplicationParameters::getNumberOfThreads() {
 	return this->numberOfThreads;
 }
 
-int ApplicationParameters::getTotalLayerCount() {
+llu ApplicationParameters::getTotalLayerCount() {
 	return this->totalLayerCount;
 }
 
-int* ApplicationParameters::getHiddenLayerSize() {
+llu* ApplicationParameters::getHiddenLayerSize() {
 	return this->hiddenLayerSize;
 }
 
-int ApplicationParameters::getMaxIteration() {
+llu ApplicationParameters::getMaxIteration() {
 	return this->maxIteration;
 }
 
-int ApplicationParameters::getLambda() {
+llu ApplicationParameters::getLambda() {
 	return this->lambda;
 }
 
-int ApplicationParameters::isCrossPredictionEnabled() {
+llu ApplicationParameters::isCrossPredictionEnabled() {
 	return this->predict;
 }
 
-int ApplicationParameters::loadThetasEnabled() {
+llu ApplicationParameters::loadThetasEnabled() {
 	return this->loadThetas;
 }
 
-int ApplicationParameters::saveThetasEnabled() {
+llu ApplicationParameters::saveThetasEnabled() {
 	return this->saveThetas;
 }
 
-int ApplicationParameters::scaleInputsEnabled() {
+llu ApplicationParameters::scaleInputsEnabled() {
 	return this->scale;
 }
 
-int ApplicationParameters::isValid() {
+llu ApplicationParameters::isValid() {
 	return this->valid;
 }
 
-int ApplicationParameters::getTestPercentage() {
+llu ApplicationParameters::getTestPercentage() {
 	return this->testPercentage;
 }
 
-void ApplicationParameters::setRowCount(int count) {
+void ApplicationParameters::setRowCount(llu count) {
 	this->rowCount = count;
 }
 
-int ApplicationParameters::steps() {
+llu ApplicationParameters::steps() {
 	return this->predictionStep;
 }
 
-int ApplicationParameters::getCpus() {
+llu ApplicationParameters::getCpus() {
 	return this->cpus;
 }
 
-int ApplicationParameters::isRandom() {
+llu ApplicationParameters::isRandom() {
 	return this->random;
 }

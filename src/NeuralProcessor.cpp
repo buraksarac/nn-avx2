@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 		xlist = params->scaleInputsEnabled() ? IOUtils::getFeaturedList(x, params->getColumnCount(), params->getRowCount()) : x;
 		//get expectation list
 		yTemp = IOUtils::getArray(params->getYPath(), params->getRowCount(), 1);
-	} catch (int e) {
+	} catch (llu e) {
 		string message;
 		switch (e) {
 		case 1:
@@ -74,34 +74,34 @@ int main(int argc, char **argv) {
 	//parse expected list to 1 and 0.
 	//i.e. if value is 3 and number of labels 6
 	//it should look like: 0 0 1 0 0 0
-	for (int r = 0; r < params->getRowCount(); r++) {
-		for (int c = 0; c < params->getNumberOfLabels(); c++) {
+	for (llu r = 0; r < params->getRowCount(); r++) {
+		for (llu c = 0; c < params->getNumberOfLabels(); c++) {
 			ylist[(r * params->getNumberOfLabels()) + c] = ((c + 1) == abs(yTemp[r])) ? 1 : 0;
 		}
 	}
 
-	int testRows = params->getRowCount();
+	llu testRows = params->getRowCount();
 	if (params->getTestPercentage() > 0) {
 		testRows = (params->getTestPercentage() * params->getRowCount()) / 100;
 		params->setRowCount(params->getRowCount() - testRows);
 	}
-	printf("\n\n Total %i rows will be trained \n", params->getRowCount());
-	printf("\n\n Total %i rows will be tested \n", testRows);
+	printf("\n\n Total %lli rows will be trained \n", params->getRowCount());
+	printf("\n\n Total %lli rows will be tested \n", testRows);
 
 	//collect layer item infos in an array
-	int *neuronCount = (int*) malloc(sizeof(int) * params->getTotalLayerCount());
+	llu *neuronCount = (llu*) malloc(sizeof(llu) * params->getTotalLayerCount());
 	neuronCount[0] = params->getColumnCount();
-	for (int j = 1; j < params->getTotalLayerCount() - 1; ++j) {
+	for (llu j = 1; j < params->getTotalLayerCount() - 1; ++j) {
 		neuronCount[j] = params->getHiddenLayerSize()[j - 1];
 	}
 	neuronCount[params->getTotalLayerCount() - 1] = params->getNumberOfLabels();
 
 	//calculate weights size
 	float *tList;
-	float thetaRowCount = 0;
-	for (int i = 0; i < params->getTotalLayerCount() - 1; i++) {
-		for (int j = 0; j < neuronCount[i + 1]; j++) {
-			for (int k = 0; k < neuronCount[i] + 1; k++) {
+	llu thetaRowCount = 0;
+	for (llu i = 0; i < params->getTotalLayerCount() - 1; i++) {
+		for (llu j = 0; j < neuronCount[i + 1]; j++) {
+			for (llu k = 0; k < neuronCount[i] + 1; k++) {
 				thetaRowCount++;
 			}
 		}
@@ -129,10 +129,10 @@ int main(int argc, char **argv) {
 		float iTook = took / gd->getTotalIterations();
 		float bTook = took / gd->getTotalBatches();
 
-		printf("\n\tTotal batches:\t\t\t\t\t%d\n",gd->getTotalBatches());
-		printf("\tTotal iterations:\t\t\t\t%d\n",gd->getTotalIterations());
+		printf("\n\tTotal batches:\t\t\t\t\t%lli\n",gd->getTotalBatches());
+		printf("\tTotal iterations:\t\t\t\t%lli\n",gd->getTotalIterations());
 
-		printf("\tTime per full batch of %d rows:\t\t%.6f\n",params->getRowCount(),bTook);
+		printf("\tTime per full batch of %lli rows:\t\t%.6f\n",params->getRowCount(),bTook);
 		printf("\tTime per iteration (including failures):\t%.6f  \n",iTook);
 
 	}

@@ -36,7 +36,7 @@ static const __m256 ones = _mm256_set1_ps(1);
 static const __m256 zeros = _mm256_set1_ps(0);
 static const __m256 V_ALL_SET = _mm256_set1_ps(-1);
 #define E exp(1.0)
-NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, int *nCounts) {
+NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, llu *nCounts) {
 	_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 	_mm_setcsr(_mm_getcsr() | 0x8040);
 	numberOfThreads = params->getNumberOfThreads();
@@ -47,10 +47,10 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 	neuronCounts = nCounts;
 	numberOfLabels = params->getNumberOfLabels();
 	ySize = params->getRowCount();
-	dMatrixDimensions = new int*[layerCount - 1];
-	dLayerCache = new int[layerCount];
-	nLayerCache = new int[layerCount + 1];
-	eLayerCache = new int[layerCount];
+	dMatrixDimensions = new llu*[layerCount - 1];
+	dLayerCache = new llu[layerCount];
+	nLayerCache = new llu[layerCount + 1];
+	eLayerCache = new llu[layerCount];
 	dMatrixSize = 0;
 	nLayerCache[0] = 0;
 	eLayerCache[0] = 0;
@@ -69,7 +69,7 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 
 	//we need rowcount in float value for calculation
 
-	for (int i = 0; i < layerCount; ++i) {
+	for (llu i = 0; i < layerCount; ++i) {
 
 		neuronSize += i == layerCount - 1 ? neuronCounts[i] : neuronCounts[i] + 1;
 		nLayerCache[i + 1] = neuronSize;
@@ -78,7 +78,7 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 
 			errorSize += i == layerCount - 2 ? neuronCounts[i + 1] : neuronCounts[i + 1] + 1;
 			eLayerCache[i + 1] = errorSize;
-			dMatrixDimensions[i] = new int[2];
+			dMatrixDimensions[i] = new llu[2];
 			dMatrixDimensions[i][0] = neuronCounts[i + 1];
 			dMatrixDimensions[i][1] = neuronCounts[i] + 1;
 
@@ -89,11 +89,11 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 
 	mDeltaSize = sizeof(float) * deltaSize;
 	deltas = (float*) malloc(sizeof(float) * 1);
-	for (int i = params->getCpus() - 1; i >= threadBarrier; i--) {
-		int t = i - threadBarrier;
-		int isMain = t == 0;
-		int loopmin = (int) ((long) (t + 0) * (long) (ySize) / (long) numberOfThreads);
-		int loopmax = (int) ((long) (t + 1) * (long) (ySize) / (long) numberOfThreads);
+	for (llu i = params->getCpus() - 1; i >= threadBarrier; i--) {
+		llu t = i - threadBarrier;
+		llu isMain = t == 0;
+		llu loopmin = (int) ((long) (t + 0) * (long) (ySize) / (long) numberOfThreads);
+		llu loopmax = (int) ((long) (t + 1) * (long) (ySize) / (long) numberOfThreads);
 		stDatas[t].deltas = (float*) malloc(sizeof(float) * deltaSize);
 		stDatas[t].xList = xList;
 		stDatas[t].ySizeF = yf;
@@ -133,7 +133,7 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 }
 
 NeuralNetwork::~NeuralNetwork() {
-	for (int t = numberOfThreads - 1; t >= 0; t--) {
+	for (llu t = numberOfThreads - 1; t >= 0; t--) {
 		if (!stDatas[t].isLast) {
 			pthread_mutex_lock(&stDatas[t].mutex);
 			stDatas[t].workType = -1;
@@ -142,7 +142,7 @@ NeuralNetwork::~NeuralNetwork() {
 		}
 
 	}
-	for (int t = numberOfThreads - 1; t > 0; t--) {
+	for (llu t = numberOfThreads - 1; t > 0; t--) {
 		pthread_join(threads[t], NULL);
 		pthread_mutex_destroy(&stDatas[t].mutex);
 		pthread_cond_destroy(&stDatas[t].waitCond);
@@ -154,7 +154,7 @@ NeuralNetwork::~NeuralNetwork() {
 	free(xList);
 	delete[] yList;
 
-	for (int i = 0; i < numberOfThreads; ++i) {
+	for (llu i = 0; i < numberOfThreads; ++i) {
 		free(stDatas[i].deltas);
 	}
 	free(stDatas);
@@ -221,13 +221,13 @@ static inline void _mswap(float *a, float *b) {
 
 static inline void fWork1(stData *param) {
 
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mcopy(&param->x[r], &param->x0[r]);
 		_mcopy(&param->df1[r], &param->df0[r]);
 		_mulAddBroadcast(&param->x[r], &param->z1, &param->s[r]);
 	}
 
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->x0[r] = param->x[r]; //copy x value into x0
 		param->df0[r] = param->df1[r]; //copy df1 value into df0
 		param->x[r] = fma(param->z1, param->s[r], param->x[r]); //update x as X = X + z1*s;
@@ -237,53 +237,53 @@ static inline void fWork1(stData *param) {
 
 static inline void fWork2(stData *param) {
 	param->d2 = 0.0;
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mcopy(&(param->calculatedDeltas[r]), &param->df2[r]);
 		param->d2 += _mulFmaddStore2(&param->s[r], &param->df2[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->df2[r] = param->calculatedDeltas[r];
 		param->d2 = fma(param->s[r], param->df2[r], param->d2); // d2 = df2'*s;
 	}
 }
 
 static inline void fWork3(stData *param) {
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mulAddBroadcast(&param->x[r], &param->z2, &param->s[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->x[r] = fma(param->z2, param->s[r], param->x[r]);
 	}
 }
 
 static inline void fWork4(stData *param) {
 	param->d2 = 0.0;
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mcopy(&(param->calculatedDeltas[r]), &param->df2[r]);
 		param->d2 += _mulFmaddStore2(&param->s[r], &param->df2[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->df2[r] = param->calculatedDeltas[r];
 		param->d2 = fma(param->s[r], param->df2[r], param->d2); // d2 = df2'*s;
 	}
 }
 
 static inline void fWork5(stData *param) {
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mulAddBroadcast(&param->x[r], &param->z2, &param->s[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->x[r] = fma(param->z2, param->s[r], param->x[r]);
 	}
 }
 
 static inline void fWork6(stData *param) {
 	param->d2 = 0.0;
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mcopy(&(param->calculatedDeltas[r]), &param->df2[r]);
 		param->d2 += _mulFmaddStore2(&param->s[r], &param->df2[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->df2[r] = param->calculatedDeltas[r];
 		param->d2 = fma(param->s[r], param->df2[r], param->d2); // d2 = df2'*s;
 	}
@@ -293,12 +293,12 @@ static inline void fWork7(stData *param) {
 	param->sum1 = 0.0;
 	param->sum2 = 0.0;
 	param->sum3 = 0.0;
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		param->sum1 += _mulFmaddStore2(&param->df2[r], &param->df2[r]);
 		param->sum2 += _mulFmaddStore2(&param->df1[r], &param->df2[r]);
 		param->sum3 += _mulFmaddStore2(&param->df1[r], &param->df1[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->sum1 = fma(param->df2[r], param->df2[r], param->sum1);
 		param->sum2 = fma(param->df1[r], param->df2[r], param->sum2);
 		param->sum3 = fma(param->df1[r], param->df1[r], param->sum3);
@@ -307,12 +307,12 @@ static inline void fWork7(stData *param) {
 
 static inline void fWork8(stData *param) {
 	param->d2 = 0.0;
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mulSub(&param->p, &param->s[r], &param->df2[r]);
 		_mswap(&param->df1[r], &param->df2[r]);
 		param->d2 += _mulFmaddStore2(&param->s[r], &param->df1[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->s[r] = param->p * param->s[r] - param->df2[r];
 		float tmp = param->df1[r];
 		param->df1[r] = param->df2[r];
@@ -323,22 +323,22 @@ static inline void fWork8(stData *param) {
 
 static inline void fWork9(stData *param) {
 	param->d2 = 0.0;
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mulNegate(&param->df1[r], &param->s[r]);
 		param->d2 += _mulFmaddStore1(&param->s[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->s[r] = -param->df1[r]; // s = -df1;
 		param->d2 = fma(-param->s[r], param->s[r], param->d2);
 	}
 }
 
 static inline void fWork10(stData *param) {
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mcopy(&param->x0[r], &param->x[r]);
 		_mcopy(&param->df0[r], &param->df1[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->x[r] = param->x0[r];
 		param->df1[r] = param->df0[r];
 	}
@@ -346,12 +346,12 @@ static inline void fWork10(stData *param) {
 
 static inline void fWork11(stData *param) {
 	param->d1 = 0.0;
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mswap(&param->df1[r], &param->df2[r]);
 		_mulNegate(&param->df1[r], &param->s[r]);
 		param->d1 += _mulFmaddStore1(&param->s[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		float tmp = param->df1[r];
 		param->df1[r] = param->df2[r];
 		param->df2[r] = tmp;
@@ -362,12 +362,12 @@ static inline void fWork11(stData *param) {
 
 static inline void fWork13(stData *param) {
 	param->d1 = 0.0;
-	for (int r = 0; r < param->size; r += 8) {
+	for (llu r = 0; r < param->size; r += 8) {
 		_mcopy(&(param->calculatedDeltas[r]), &(param->df1[r]));
 		_mulNegate(&param->df1[r], &param->s[r]);
 		param->d1 += _mulFmaddStore1(&param->s[r]);
 	}
-	for (int r = param->size; r < param->end; r++) {
+	for (llu r = param->size; r < param->end; r++) {
 		param->df1[r] = param->calculatedDeltas[r];
 		param->s[r] = -param->df1[r];
 		param->d1 = fma(-param->s[r], param->s[r], param->d1);
@@ -378,46 +378,46 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 	float *neurons = (float*) malloc(sizeof(float) * data->neuronSize);
 	float *errors = (float*) malloc(sizeof(float) * data->errorSize);
 	data->cost = 0.0f;
-	int dSize = data->deltaSize - (data->deltaSize & 7);
-	for (int i = 0; i < dSize; i += 8) {
+	llu dSize = data->deltaSize - (data->deltaSize & 7);
+	for (llu i = 0; i < dSize; i += 8) {
 		_mm256_storeu_ps(&(data->deltas[i]), zeros);
 	}
-	for (int i = dSize; i < data->deltaSize; i++) {
+	for (llu i = dSize; i < data->deltaSize; i++) {
 		data->deltas[i] = 0;
 	}
-	int layerCount = data->layerCount;
-	int *neuronCounts = data->neuronCounts;
+	llu layerCount = data->layerCount;
+	llu *neuronCounts = data->neuronCounts;
 	float *thetas = data->thetas;
 	float *xList = data->xList;
 	float *yList = data->yList;
-	int *dlayerCache = data->dlayerCache;
-	int numLabels = data->numLabels;
-	int xListRows = data->xListRows;
-	int **dMatrixInfo = data->dMatrixInfo;
-	int *nLayerCache = data->nLayerCache;
-	int *eLayerCache = data->eLayerCache;
+	llu *dlayerCache = data->dlayerCache;
+	llu numLabels = data->numLabels;
+	llu xListRows = data->xListRows;
+	llu **dMatrixInfo = data->dMatrixInfo;
+	llu *nLayerCache = data->nLayerCache;
+	llu *eLayerCache = data->eLayerCache;
 
-	for (int m = data->loopMin; m < data->loopMax; m++) {
-		int yCache = m * numLabels;
-		int xCache = xListRows * m;
+	for (llu m = data->loopMin; m < data->loopMax; m++) {
+		llu yCache = m * numLabels;
+		llu xCache = xListRows * m;
 		float *x = &(xList[xCache]);
 		float *y = &(yList[yCache]);
 
 		//forward propagate
-		for (int l = 0; l < layerCount; l++) {
+		for (llu l = 0; l < layerCount; l++) {
 
-			int previousLayer = nLayerCache[l];
+			llu previousLayer = nLayerCache[l];
 			bool isLast = l == (layerCount - 1);
-			int lPrev = l - 1;
-			int dCache = dlayerCache[l - 1];
-			int nCounts = neuronCounts[lPrev] + 1;
-			int siz = nCounts - (nCounts & 7);
-			int neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
-			int jPrev = 0;
-			int row = 0;
+			llu lPrev = l - 1;
+			llu dCache = dlayerCache[l - 1];
+			llu nCounts = neuronCounts[lPrev] + 1;
+			llu siz = nCounts - (nCounts & 7);
+			llu neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
+			llu jPrev = 0;
+			llu row = 0;
 			float *n = &(neurons[nLayerCache[lPrev]]);
 
-			for (int j = 0; j < neuronSize; j++) {
+			for (llu j = 0; j < neuronSize; j++) {
 				jPrev = j - 1;
 				row = previousLayer + j;
 				neurons[row] = .0f;
@@ -428,10 +428,10 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 					neurons[row] = x[jPrev];
 				} else {
 					float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
-					for (int k = 0; k < siz; k = k + 8) {
+					for (llu k = 0; k < siz; k = k + 8) {
 						neurons[row] += _mulAdd(&t[k], &n[k]);
 					}
-					for (int k = siz; k < nCounts; k++) {
+					for (llu k = siz; k < nCounts; k++) {
 						neurons[row] = fma(t[k], n[k], neurons[row]);
 					}
 
@@ -441,20 +441,14 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 		}
 
 		//backpropagate
-		for (int i = layerCount - 2; i >= 0; i--) {
-			int iNext = i + 1;
-			int neuronSize = i == layerCount - 2 ? neuronCounts[iNext] : neuronCounts[iNext] + 1;
-			int previousLayer = eLayerCache[i];
-			int nCache = nLayerCache[iNext];
-			int nCounts = neuronCounts[i + 2];
-			int dCache = dlayerCache[iNext];
-			int eCache = eLayerCache[iNext];
-			float *e = &(errors[eCache]);
-			float *t = &(thetas[dCache]);
-			int siz = nCounts - (nCounts & 3);
-			int val = dMatrixInfo[iNext][1];
-			int row = 0;
-			for (int j = neuronSize - 1; j >= 0; j--) {
+		for (llu i = layerCount - 2; i >= 0; i--) {
+			llu iNext = i + 1;
+			llu neuronSize = i == layerCount - 2 ? neuronCounts[iNext] : neuronCounts[iNext] + 1;
+			llu previousLayer = eLayerCache[i];
+			llu nCache = nLayerCache[iNext];
+
+			llu row = 0;
+			for (llu j = neuronSize - 1; j >= 0; j--) {
 				row = previousLayer + j;
 
 				errors[row] = 0; //reset
@@ -462,10 +456,16 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				if (i == layerCount - 2) {
 					errors[row] = nVal - y[j];
 				} else {
-
+					llu nCounts = neuronCounts[i + 2];
+					llu dCache = dlayerCache[iNext];
+					llu eCache = eLayerCache[iNext];
+					float *e = &(errors[eCache]);
+					float *t = &(thetas[dCache]);
+					llu siz = nCounts - (nCounts & 3);
+					llu val = dMatrixInfo[iNext][1];
 					float *t2 = &(t[j]);
 
-					for (int k = 0; k < siz; k = k + 4) {
+					for (llu k = 0; k < siz; k = k + 4) {
 						errors[row] = fma(t2[val * k], e[k], errors[row]);
 						errors[row] = fma(t2[val * (k + 1)], e[k + 1], errors[row]);
 						errors[row] = fma(t2[val * (k + 2)], e[k + 2], errors[row]);
@@ -473,7 +473,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 
 					}
 
-					for (int a = siz; a < nCounts; a++) {
+					for (llu a = siz; a < nCounts; a++) {
 						errors[row] = fma(t2[val * a], e[a], errors[row]);
 					}
 					errors[row] *= (nVal * (1 - nVal));
@@ -485,25 +485,25 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 
 		//calculate deltas
 		float sum = 0.0;
-		for (int i = 0; i < layerCount - 1; i++) {
-			int iNext = i + 1;
-			int n1 = dMatrixInfo[i][0];
-			int n2 = dMatrixInfo[i][1];
-			int nCache1 = nLayerCache[iNext];
-			int eCache = eLayerCache[i];
-			int nCache = nLayerCache[i];
+		for (llu i = 0; i < layerCount - 1; i++) {
+			llu iNext = i + 1;
+			llu n1 = dMatrixInfo[i][0];
+			llu n2 = dMatrixInfo[i][1];
+			llu nCache1 = nLayerCache[iNext];
+			llu eCache = eLayerCache[i];
+			llu nCache = nLayerCache[i];
 			float *e = &(errors[eCache]);
 			float *n = &(neurons[nCache]);
-			int isLast = i == layerCount - 2;
-			int dCache = dlayerCache[i];
+			llu isLast = i == layerCount - 2;
+			llu dCache = dlayerCache[i];
 			float *d = &(data->deltas[dCache]);
-			int siz = n1 - (n1 & 7);
-			for (int j = 0; j < siz; j = j + 8) {
-				int step = j * n2;
+			llu siz = n1 - (n1 & 7);
+			for (llu j = 0; j < siz; j = j + 8) {
+				llu step = j * n2;
 				if (isLast) {
 					sum += _sums(&yList[yCache + j], &neurons[nCache1 + j]);
 				}
-				int index = isLast ? j : j + 1;
+				llu index = isLast ? j : j + 1;
 				float eVal = e[index++];
 				float eVal2 = e[index++];
 				float eVal3 = e[index++];
@@ -520,8 +520,8 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				float *d26 = &(d[step += n2]);
 				float *d27 = &(d[step += n2]);
 				float *d28 = &(d[step += n2]);
-				int size = n2 - (n2 & 7);
-				for (int k = 0; k < size; k = k + 8) {
+				llu size = n2 - (n2 & 7);
+				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d2[k], &eVal, &n[k]);
 					_mulAddBroadcast(&d22[k], &eVal2, &n[k]);
 					_mulAddBroadcast(&d23[k], &eVal3, &n[k]);
@@ -531,7 +531,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 					_mulAddBroadcast(&d27[k], &eVal7, &n[k]);
 					_mulAddBroadcast(&d28[k], &eVal8, &n[k]);
 				}
-				for (int d = size; d < n2; d++) {
+				for (llu d = size; d < n2; d++) {
 					float nVal = n[d];
 					d2[d] = fma(eVal, nVal, d2[d]);
 					d22[d] = fma(eVal2, nVal, d22[d]);
@@ -544,16 +544,16 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				}
 			}
 
-			for (int a = siz; a < n1; a++) {
+			for (llu a = siz; a < n1; a++) {
 				sum += isLast ? -(yList[yCache + a] * log(neurons[nCache1 + a])) - ((1 - yList[yCache + a]) * log(1 - neurons[nCache1 + a])) : 0;
-				int index = isLast ? a : a + 1;
+				llu index = isLast ? a : a + 1;
 				float eVal = e[index];
 				float *d2 = &(d[n2 * a]);
-				int size = n2 - (n2 & 7);
-				for (int d = 0; d < size; d += 8) {
+				llu size = n2 - (n2 & 7);
+				for (llu d = 0; d < size; d += 8) {
 					_mulAddBroadcast(&d2[d], &eVal, &n[d]);
 				}
-				for (int d = size; d < n2; d++) {
+				for (llu d = size; d < n2; d++) {
 					d2[d] = fma(eVal, n[d], d2[d]);
 				}
 			}
@@ -613,7 +613,7 @@ void NeuralNetwork::handleWork(stData *param) {
 }
 void* NeuralNetwork::calculateBackCost(void *dat) {
 	struct stData *data = (struct stData*) dat;
-	int w = 0;
+	llu w = 0;
 
 	for (;;) {
 		pthread_mutex_lock(&data->mutex);
@@ -639,8 +639,8 @@ void* NeuralNetwork::calculateBackCost(void *dat) {
 
 	return 0;
 }
-void NeuralNetwork::submitWork(int workType) {
-	for (int t = numberOfThreads - 1; t >= 0; t--) {
+void NeuralNetwork::submitWork(llu workType) {
+	for (llu t = numberOfThreads - 1; t >= 0; t--) {
 		if (stDatas[t].isMain) {
 			//if its last handle by main thread
 			stDatas[t].workType = workType;
@@ -654,7 +654,7 @@ void NeuralNetwork::submitWork(int workType) {
 		}
 
 	}
-	for (int t = numberOfThreads - 1; t > 0; t--) {
+	for (llu t = numberOfThreads - 1; t > 0; t--) {
 		pthread_mutex_lock(&stDatas[t].mutex);
 		while (stDatas[t].workType != 0) {
 			pthread_cond_wait(&stDatas[t].completeCond, &stDatas[t].mutex);
@@ -669,7 +669,7 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 //create params for each thread
 
 	float cost = 0.0f;
-	for (int t = numberOfThreads - 1; t >= 0; t--) {
+	for (llu t = numberOfThreads - 1; t >= 0; t--) {
 		stDatas[t].thetas = thetas;
 		stDatas[t].cost = 0.0f;
 		stDatas[t].calculatedDeltas = &(deltas[stDatas[t].tloopmin]);
@@ -684,7 +684,7 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		}
 
 	}
-	for (int t = numberOfThreads - 1; t > 0; t--) {
+	for (llu t = numberOfThreads - 1; t > 0; t--) {
 		pthread_mutex_lock(&stDatas[t].mutex);
 		while (stDatas[t].workType != 0) {
 			pthread_cond_wait(&stDatas[t].completeCond, &stDatas[t].mutex);
@@ -696,12 +696,12 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 
 //collect all data from threads and update cost
 
-	int da = 0;
-	int dc = 0;
-	for (int l = 0; l < deltaSize; l++) {
+	llu da = 0;
+	llu dc = 0;
+	for (llu l = 0; l < deltaSize; l++) {
 		dc = (l - dLayerCache[da]) % dMatrixDimensions[da][1];
 		deltas[l] = 0.0;
-		for (int i = 0; i < numberOfThreads; i++) {
+		for (llu i = 0; i < numberOfThreads; i++) {
 			deltas[l] += stDatas[i].deltas[l];
 		}
 		deltas[l] *= yf;
@@ -710,7 +710,7 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 		da += (l + 1) == dLayerCache[da + 1];
 	}
 
-	for (int i = 0; i < numberOfThreads; ++i) {
+	for (llu i = 0; i < numberOfThreads; ++i) {
 		cost += stDatas[i].cost;
 	}
 
@@ -720,15 +720,15 @@ float NeuralNetwork::calculateBackCostWithThetas(float *thetas) {
 
 void NeuralNetwork::predict(float *tList, float *yTemp) {
 
-	int totalCorrect = 0;
-	int totalWrong = 0;
+	llu totalCorrect = 0;
+	llu totalWrong = 0;
 
-	for (int i = 0; i < ySize; ++i) {
+	for (llu i = 0; i < ySize; ++i) {
 
 		float *neurons = forwardPropogate(tList, &(xList[(i * xColumns)]));
 		float closer = RAND_MAX;
 		float val = 0;
-		for (int j = 0; j < numberOfLabels; j++) {
+		for (llu j = 0; j < numberOfLabels; j++) {
 
 			if (fabs((1 - closer)) > fabs((1 - neurons[nLayerCache[layerCount - 1] + j]))) {
 				val = j + 1;
@@ -746,22 +746,22 @@ void NeuralNetwork::predict(float *tList, float *yTemp) {
 
 	}
 
-	printf("\nPrediction complete. Total %i correct and %i wrong prediction\n", totalCorrect, totalWrong);
+	printf("\nPrediction complete. Total %lli correct and %lli wrong prediction\n", totalCorrect, totalWrong);
 	float successRate = totalCorrect * 100 / ySize;
 	printf("\n Success rate is: %%%0.0f\n", successRate);
 }
 
-void NeuralNetwork::predict(int rows, float *xlist, float *tList, float *yTemp) {
+void NeuralNetwork::predict(llu rows, float *xlist, float *tList, float *yTemp) {
 
-	int totalCorrect = 0;
-	int totalWrong = 0;
+	llu totalCorrect = 0;
+	llu totalWrong = 0;
 
-	for (int i = 0; i < rows; ++i) {
+	for (llu i = 0; i < rows; ++i) {
 
 		float *neurons = forwardPropogate(tList, &(xlist[(i * xColumns)]));
 		float closer = RAND_MAX;
 		float val = 0;
-		for (int j = 0; j < numberOfLabels; j++) {
+		for (llu j = 0; j < numberOfLabels; j++) {
 
 			if (fabs((1 - closer)) > fabs((1 - neurons[nLayerCache[layerCount - 1] + j]))) {
 				val = j + 1;
@@ -779,21 +779,21 @@ void NeuralNetwork::predict(int rows, float *xlist, float *tList, float *yTemp) 
 
 	}
 	float successRate = totalCorrect * 100 / rows;
-	printf("\n\t|\n\t\\__Prediction complete. Total %i correct and %i wrong prediction, rate: %%%0.0f \n", totalCorrect, totalWrong, successRate);
+	printf("\n\t|\n\t\\__Prediction complete. Total %lli correct and %lli wrong prediction, rate: %%%0.0f \n", totalCorrect, totalWrong, successRate);
 
 }
 float* NeuralNetwork::forwardPropogate(float *tList, float *xList) {
 
-	int mNeuronSize = sizeof(float) * neuronSize;
+	llu mNeuronSize = sizeof(float) * neuronSize;
 	float *neurons = (float*) malloc(mNeuronSize);
-	for (int l = 0; l < layerCount; l++) {
-		int previousLayer = nLayerCache[l];
+	for (llu l = 0; l < layerCount; l++) {
+		llu previousLayer = nLayerCache[l];
 		bool isLast = l == (layerCount - 1);
 
-		int neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
-		for (int j = 0; j < neuronSize; j++) {
-			int jPrev = j - 1;
-			int row = previousLayer + j;
+		llu neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
+		for (llu j = 0; j < neuronSize; j++) {
+			llu jPrev = j - 1;
+			llu row = previousLayer + j;
 			neurons[row] = .0f;
 
 			if (j == 0 && !isLast) {
@@ -801,16 +801,16 @@ float* NeuralNetwork::forwardPropogate(float *tList, float *xList) {
 			} else if (l == 0) {
 				neurons[row] = xList[jPrev];
 			} else {
-				int lPrev = l - 1;
-				int dCache = dLayerCache[l - 1];
-				int nCounts = neuronCounts[lPrev] + 1;
-				int siz = nCounts - (nCounts & 7);
+				llu lPrev = l - 1;
+				llu dCache = dLayerCache[l - 1];
+				llu nCounts = neuronCounts[lPrev] + 1;
+				llu siz = nCounts - (nCounts & 7);
 				float *n = &(neurons[nLayerCache[lPrev]]);
 				float *t = &(tList[(dMatrixDimensions[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
-				for (int k = 0; k < siz; k = k + 8) {
+				for (llu k = 0; k < siz; k = k + 8) {
 					neurons[row] += _mulAdd(&t[k], &n[k]);
 				}
-				for (int k = siz; k < nCounts; k++) {
+				for (llu k = siz; k < nCounts; k++) {
 					neurons[row] = fma(t[k], n[k], neurons[row]);
 				}
 

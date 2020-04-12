@@ -23,7 +23,7 @@
 #include <fstream>
 #include <string>
 
-typedef unsigned long long int lint;
+typedef  long long int llu;
 using namespace std;
 
 class IOUtils {
@@ -31,11 +31,11 @@ private:
 
 public:
 	IOUtils();
-	static float* getArray(string path, lint rows, lint columns);
-	static void saveThetas(float* thetas, lint size);
-	static float* getFeaturedList(float* list, int columnSize, int rowSize);
-	static int fileExist(string path);
-	static int* parseHiddenLayers(char* string, int size);
+	static float* getArray(string path, llu rows, llu columns);
+	static void saveThetas(float* thetas, llu size);
+	static float* getFeaturedList(float* list, llu columnSize, llu rowSize);
+	static llu fileExist(string path);
+	static llu* parseHiddenLayers(char* string, llu size);
 	static char** str_split(char *a_str, const char a_delim);
 };
 

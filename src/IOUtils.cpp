@@ -35,22 +35,22 @@ IOUtils::IOUtils() {
 
 }
 
-int IOUtils::fileExist(string name) {
+llu IOUtils::fileExist(string name) {
 	struct stat buffer;
 	return (stat(name.c_str(), &buffer) == 0);
 
 }
-float* IOUtils::getFeaturedList(float *list, int columnSize, int rowSize) {
+float* IOUtils::getFeaturedList(float *list, llu columnSize, llu rowSize) {
 
 	float *sums = (float*) malloc(sizeof(float) * rowSize);
 	float *means = (float*) malloc(sizeof(float) * rowSize);
 	float *stds = (float*) malloc(sizeof(float) * rowSize);
 	float *featuredList = (float*) malloc(sizeof(float) * rowSize * columnSize);
 
-	for (int i = 0; i < rowSize; ++i) {
+	for (llu i = 0; i < rowSize; ++i) {
 		float sum = 0.0;
 		float correction = 0.0;
-		for (int j = 0; j < columnSize; ++j) {
+		for (llu j = 0; j < columnSize; ++j) {
 			float y = list[(i * columnSize) + j] - correction;
 			float t = sum + y;
 			correction = (t - sum) - y;
@@ -60,10 +60,10 @@ float* IOUtils::getFeaturedList(float *list, int columnSize, int rowSize) {
 		means[i] = sums[i] / columnSize;
 	}
 
-	for (int i = 0; i < rowSize; ++i) {
+	for (llu i = 0; i < rowSize; ++i) {
 		float sum = 0.0;
 		float correction = 0.0;
-		for (int j = 0; j < columnSize; ++j) {
+		for (llu j = 0; j < columnSize; ++j) {
 			float value = std::pow((list[(i * columnSize) + j] - means[i]), 2);
 			float y = value - correction;
 			float t = sum + y;
@@ -73,12 +73,12 @@ float* IOUtils::getFeaturedList(float *list, int columnSize, int rowSize) {
 		stds[i] = sum;
 	}
 
-	for (int i = 0; i < rowSize; ++i) {
+	for (llu i = 0; i < rowSize; ++i) {
 		stds[i] = sqrt(stds[i] / columnSize);
 	}
 
-	for (int i = 0; i < rowSize; ++i) {
-		for (int j = 0; j < columnSize; ++j) {
+	for (llu i = 0; i < rowSize; ++i) {
+		for (llu j = 0; j < columnSize; ++j) {
 			featuredList[(i * columnSize) + j] = (list[(i * columnSize) + j] - means[i]) / stds[i];
 		}
 	}
@@ -88,7 +88,7 @@ float* IOUtils::getFeaturedList(float *list, int columnSize, int rowSize) {
 	free(stds);
 	return featuredList;
 }
-void IOUtils::saveThetas(float *thetas, lint size) {
+void IOUtils::saveThetas(float *thetas, llu size) {
 	struct timespec tstart = { 0, 0 };
 	clock_gettime(CLOCK_MONOTONIC, &tstart);
 	string fileName = "thetas_";
@@ -102,19 +102,19 @@ void IOUtils::saveThetas(float *thetas, lint size) {
 	printf("\t\t|\n\t\t\\__Thetas (%s) has been saved into project folder.\n", sstm.str().c_str());
 }
 
-float* IOUtils::getArray(string path, lint rows, lint columns) {
+float* IOUtils::getArray(string path, llu rows, llu columns) {
 
 	ifstream inputStream;
 
-	lint currentRow = 0;
+	llu currentRow = 0;
 	std::string s;
 	inputStream.open(path.c_str());
 
 	if (!inputStream.is_open()) {
 		throw 3;
 	}
-	lint size = columns * rows;
-	lint mListSize = sizeof(float) * size;
+	llu size = columns * rows;
+	llu mListSize = sizeof(float) * size;
 	float *list = (float*) malloc(mListSize);
 
 	while (!inputStream.eof()) {
@@ -183,13 +183,13 @@ char** IOUtils::str_split(char *a_str, const char a_delim) {
 	return result;
 }
 
-int* IOUtils::parseHiddenLayers(char *str, int size) {
+llu* IOUtils::parseHiddenLayers(char *str, llu size) {
 	char **tokens;
 	tokens = str_split(str, ',');
 
 	if (tokens) {
-		int *list = (int *) malloc(sizeof(int)*size);
-		int i;
+		llu *list = (llu *) malloc(sizeof(int)*size);
+		llu i;
 		for (i = 0; *(tokens + i); i++) {
 			list[i] = atoi(*(tokens + i));
 			free(*(tokens + i));

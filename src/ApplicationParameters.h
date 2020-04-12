@@ -12,35 +12,35 @@
 #include <stdlib.h>
 
 using namespace std;
-
+typedef  long long int llu;
 class ApplicationParameters {
 
 private:
 	string xPath;
 	string yPath;
 	string tPath;
-	int rowCount;
-	int colCount;
-	int numberOfLabels;
-	int totalLayerCount;
-	int *hiddenLayerSize;
-	int numberOfThreads;
-	int maxIteration;
+	llu rowCount;
+	llu colCount;
+	llu numberOfLabels;
+	llu totalLayerCount;
+	llu *hiddenLayerSize;
+	llu numberOfThreads;
+	llu maxIteration;
 	float lambda;
-	int predict;
-	int loadThetas;
-	int saveThetas;
-	int scale;
-	int validCount;
-	int valid;
-	int testPercentage;
-	int predictionStep;
-	int cpus;
-	int random;
+	llu predict;
+	llu loadThetas;
+	llu saveThetas;
+	llu scale;
+	llu validCount;
+	llu valid;
+	llu testPercentage;
+	llu predictionStep;
+	llu cpus;
+	llu random;
 
-	void validateInputs(int argc, char **argv);
+	void validateInputs(llu argc, char **argv);
 public:
-	ApplicationParameters(int argc, char **argv);
+	ApplicationParameters(llu argc, char **argv);
 	virtual ~ApplicationParameters();
 	/*
 	 * Get path of input list
@@ -57,54 +57,54 @@ public:
 	/*
 	 * Get row count of X or Y list
 	 */
-	int getRowCount();
+	llu getRowCount();
 	/*
 	 * Get column count of X list
 	 */
-	int getColumnCount();
+	llu getColumnCount();
 	/*
 	 * Get number of labels (Quantitiy of expectations)
 	 */
-	int getNumberOfLabels();
+	llu getNumberOfLabels();
 	/*
 	 * Get total layer count
 	 */
-	int getTotalLayerCount();
+	llu getTotalLayerCount();
 	/*
 	 * Get hidden layer size
 	 */
-	int *getHiddenLayerSize();
+	llu *getHiddenLayerSize();
 	/*
 	 * Get number of threads
 	 */
-	int getNumberOfThreads();
+	llu getNumberOfThreads();
 	/*
 	 * Get maximum iterations
 	 */
-	int getMaxIteration();
+	llu getMaxIteration();
 	/*
 	 * Get momentum
 	 */
-	int getLambda();
+	llu getLambda();
 	/*
 	 * Get if user ask application to\n
 	 * do prediction after training complete
 	 */
-	int isCrossPredictionEnabled();
-	int loadThetasEnabled();
-	int saveThetasEnabled();
-	int scaleInputsEnabled();
+	llu isCrossPredictionEnabled();
+	llu loadThetasEnabled();
+	llu saveThetasEnabled();
+	llu scaleInputsEnabled();
 	void printHelp();
-	int isValid();
+	llu isValid();
 
-	int getTestPercentage();
+	llu getTestPercentage();
 
-	void setRowCount(int count);
+	void setRowCount(llu count);
 
-	int steps();
+	llu steps();
 
-	int getCpus();
-	int isRandom();
+	llu getCpus();
+	llu isRandom();
 
 };
 

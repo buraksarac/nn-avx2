@@ -43,17 +43,17 @@ static NeuralNetwork *neuralNetwork;
 NeuralNetwork* Fmincg::getNN() {
 	return neuralNetwork;
 }
-GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRowCount, float *aList, float *yList, int *neuronCounts, float *yTemp, int testRows) {
+GradientParameter* Fmincg::calculate(ApplicationParameters *params, llu thetaRowCount, float *aList, float *yList, llu *neuronCounts, float *yTemp, llu testRows) {
 
 	srand(time(0));
 
 	float nLimit = numeric_limits<float>::epsilon();
 	float *thetas = (float*) malloc(sizeof(float) * thetaRowCount);
-	int columns = 0;
-	for (int i = 0; i < params->getTotalLayerCount() - 1; i++) {
-		for (int j = 0; j < neuronCounts[i + 1]; j++) {
-			for (int k = 0; k < neuronCounts[i] + 1; k++) {
-				int r = (rand() % neuronCounts[i + 1]) + neuronCounts[i] + 1;
+	llu columns = 0;
+	for (llu i = 0; i < params->getTotalLayerCount() - 1; i++) {
+		for (llu j = 0; j < neuronCounts[i + 1]; j++) {
+			for (llu k = 0; k < neuronCounts[i] + 1; k++) {
+				llu r = (rand() % neuronCounts[i + 1]) + neuronCounts[i] + 1;
 				thetas[columns++] = params->isRandom() ? r * 2 * nLimit - nLimit : 0;
 			}
 		}
@@ -63,14 +63,14 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 
 }
 
-GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRowCount, float *aList, float *yList, int *neuronCounts, float *tList, float *yTemp, int testRows) {
+GradientParameter* Fmincg::calculate(ApplicationParameters *params, llu thetaRowCount, float *aList, float *yList, llu *neuronCounts, float *tList, float *yTemp, llu testRows) {
 
 	float *x = tList;
-	int noThreads = params->getNumberOfThreads();
+	llu noThreads = params->getNumberOfThreads();
 	neuralNetwork = new NeuralNetwork(params, aList, yList, neuronCounts);
-	int i = 0;
-	int ls_failed = 0;   // no previous line search has failed
-	int n = 0;
+	llu i = 0;
+	llu ls_failed = 0;   // no previous line search has failed
+	llu n = 0;
 //gd instance will change during the iteration
 	n++;
 
@@ -81,10 +81,10 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 	float *df2 = new float[thetaRowCount];
 	struct stData *fParam = neuralNetwork->stDatas;
 
-	for (int t = noThreads - 1; t >= 0; t--) {
-		int loopmin = (int) ((long) (t + 0) * (long) (thetaRowCount) / (long) noThreads);
-		int loopmax = (int) ((long) (t + 1) * (long) (thetaRowCount) / (long) noThreads);
-		int length = loopmax - loopmin;
+	for (llu t = noThreads - 1; t >= 0; t--) {
+		llu loopmin = ((t + 0) * (thetaRowCount) / noThreads);
+		llu loopmax = ((t + 1) * (thetaRowCount) / noThreads);
+		llu length = loopmax - loopmin;
 		fParam[t].x = &(x[loopmin]);
 		fParam[t].x0 = &(x0[loopmin]);
 		fParam[t].df1 = &(df1[loopmin]);
@@ -110,7 +110,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 	deque<float> results;
 	float d1 = 0.0;
 	neuralNetwork->submitWork(13);
-	for (int i = noThreads - 1; i >= 0; i--) {
+	for (llu i = noThreads - 1; i >= 0; i--) {
 		d1 += fParam[i].d1;
 	}
 	float z1 = 1 / (1 - d1);
@@ -120,7 +120,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 
 	float A = 0.0;
 	float B = 0.0;
-	int iter = abs(params->getMaxIteration());
+	llu iter = abs((long long int) params->getMaxIteration());
 	float *testXlist = &(aList[(params->getRowCount()) * params->getColumnCount()]);
 	float *testYlist = &(yTemp[params->getRowCount()]);
 	while (i < iter) {
@@ -131,7 +131,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 		float f0 = f1;
 
 		//work1
-		for (int i = noThreads - 1; i >= 0; i--) {
+		for (llu i = noThreads - 1; i >= 0; i--) {
 			fParam[i].z1 = z1;
 		}
 		neuralNetwork->submitWork(1);
@@ -143,16 +143,16 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 		//work2
 		d2 = 0.0;
 		neuralNetwork->submitWork(2);
-		for (int i = noThreads - 1; i >= 0; i--) {
+		for (llu i = noThreads - 1; i >= 0; i--) {
 			d2 += fParam[i].d2;
 		}
 
-		//f3 = f1; d3 = d1; z3 = -z1;        initialize point 3 equal to point 1
+		//f3 = f1; d3 = d1; z3 = -z1;        initialize pollu 3 equal to pollu 1
 		f3 = f1;
 		float d3 = d1;
 		float z3 = -1 * z1;
 		float M = MAX;
-		int success = 0;
+		llu success = 0;
 		float limit = -1;
 		while (1) {
 			float z2 = 0.0;
@@ -178,7 +178,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 				z1 = z1 + z2;
 
 				//work3
-				for (int i = noThreads - 1; i >= 0; i--) {
+				for (llu i = noThreads - 1; i >= 0; i--) {
 					fParam[i].z2 = z2;
 				}
 				neuralNetwork->submitWork(3);
@@ -190,7 +190,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 				//work4
 				d2 = 0.0;
 				neuralNetwork->submitWork(4);
-				for (int i = noThreads - 1; i >= 0; i--) {
+				for (llu i = noThreads - 1; i >= 0; i--) {
 					d2 += fParam[i].d2;
 				}
 				z3 = z3 - z2;        // z3 is now relative to the location of z2
@@ -230,7 +230,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 			z1 = z1 + z2;
 
 			//work5
-			for (int i = noThreads - 1; i >= 0; i--) {
+			for (llu i = noThreads - 1; i >= 0; i--) {
 				fParam[i].z2 = z2;
 			}
 			neuralNetwork->submitWork(5);
@@ -241,7 +241,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 			//work6
 			d2 = 0.0;
 			neuralNetwork->submitWork(6);
-			for (int i = noThreads - 1; i >= 0; i--) {
+			for (llu i = noThreads - 1; i >= 0; i--) {
 				d2 += fParam[i].d2;
 			}
 		}
@@ -251,7 +251,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 			results.push_back(f1);
 
 			if (i != 1 && ((i & (params->steps() - 1)) == 0)) {
-				printf("\n Next success cost: [[ %0.22f ]] total [[ %i ]] iteration and [[ %i ]] full batch calculation complete", f1, i, n);
+				printf("\n Next success cost: [[ %0.22f ]] total [[ %lli ]] iteration and [[ %lli ]] full batch calculation complete", f1, i, n);
 
 				if (params->getTestPercentage() == 0) {
 					neuralNetwork->predict(x, yTemp);
@@ -269,7 +269,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 			float sum2 = 0.0;
 			float sum3 = 0.0;
 			neuralNetwork->submitWork(7);
-			for (int i = noThreads - 1; i >= 0; i--) {
+			for (llu i = noThreads - 1; i >= 0; i--) {
 				sum1 += fParam[i].sum1;
 				sum2 += fParam[i].sum2;
 				sum3 += fParam[i].sum3;
@@ -277,13 +277,13 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 
 			//work8
 			float p = (sum1 - sum2) / sum3;
-			for (int i = noThreads - 1; i >= 0; i--) {
+			for (llu i = noThreads - 1; i >= 0; i--) {
 				fParam[i].p = p;
 			}
 
 			d2 = 0.0;
 			neuralNetwork->submitWork(8);
-			for (int i = noThreads - 1; i >= 0; i--) {
+			for (llu i = noThreads - 1; i >= 0; i--) {
 				d2 += fParam[i].d2;
 			}
 
@@ -291,7 +291,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 			if (d2 > 0) {
 				d2 = 0.0;
 				neuralNetwork->submitWork(9);
-				for (int i = noThreads - 1; i >= 0; i--) {
+				for (llu i = noThreads - 1; i >= 0; i--) {
 					d2 += fParam[i].d2;
 				}
 			}
@@ -314,7 +314,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, int thetaRow
 			//work11
 			d1 = 0.0;
 			neuralNetwork->submitWork(11);
-			for (int i = noThreads - 1; i >= 0; i--) {
+			for (llu i = noThreads - 1; i >= 0; i--) {
 				d1 += fParam[i].d1;
 			}
 

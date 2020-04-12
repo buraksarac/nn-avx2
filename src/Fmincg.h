@@ -26,12 +26,12 @@
 #include "ApplicationParameters.h"
 #include "NeuralNetwork.h"
 #include "IOUtils.h"
-
+typedef  long long int llu;
 class Fmincg {
 public:
 	static NeuralNetwork* getNN();
-	static GradientParameter* calculate(ApplicationParameters *params, int thetaRowCount, float *aList, float *yList, int *neuronCounts, float *yTemp, int testRows);
-	static GradientParameter* calculate(ApplicationParameters *params, int thetaRowCount, float *aList, float *yList, int *neuronCounts, float *tList, float *yTemp, int testRows);
+	static GradientParameter* calculate(ApplicationParameters *params, llu thetaRowCount, float *aList, float *yList, llu *neuronCounts, float *yTemp, llu testRows);
+	static GradientParameter* calculate(ApplicationParameters *params, llu thetaRowCount, float *aList, float *yList, llu *neuronCounts, float *tList, float *yTemp, llu testRows);
 };
 
 #endif /* SRC_FMINCG_H_ */

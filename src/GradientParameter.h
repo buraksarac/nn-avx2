@@ -20,23 +20,23 @@
 #ifndef GRADIENTPARAMETER_H_
 #define GRADIENTPARAMETER_H_
 #include <deque>
-typedef unsigned long long int lint;
+typedef  long long int llu;
 using namespace std;
 class GradientParameter {
 private:
 	float* t;
 	float c;
-	int iterations;
-	int batches;
+	llu iterations;
+	llu batches;
 	deque<float> cs;
 public:
-	GradientParameter(float* thetas,float cost,int iter,int batches);
-	GradientParameter(float* thetas, deque<float> costs,int iter,int batches);
+	GradientParameter(float* thetas,float cost,llu iter,llu batches);
+	GradientParameter(float* thetas, deque<float> costs,llu iter,llu batches);
 	virtual ~GradientParameter();
 	float* getThetas();
 	float getCost();
-	int getTotalIterations();
-	int getTotalBatches();
+	llu getTotalIterations();
+	llu getTotalBatches();
 	deque<float> getCosts();
 };
 

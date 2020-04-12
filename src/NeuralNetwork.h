@@ -23,35 +23,35 @@
 #include <pthread.h>
 
 struct loop {
-	int loopMin;
-	int loopMax;
+	llu loopMin;
+	llu loopMax;
 };
 struct stData {
 	float *deltas;
 	float *xList;
 	float ySizeF;
 	float *yList;
-	int layerCount;
-	int *neuronCounts;
+	llu layerCount;
+	llu *neuronCounts;
 	float lambda;
 	float *thetas;
-	int neuronSize;
-	int errorSize;
-	int deltaSize;
-	int xListRows;
-	int *dlayerCache;
-	int **dMatrixInfo;
-	int *nLayerCache;
-	int *eLayerCache;
-	int numLabels;
+	llu neuronSize;
+	llu errorSize;
+	llu deltaSize;
+	llu xListRows;
+	llu *dlayerCache;
+	llu **dMatrixInfo;
+	llu *nLayerCache;
+	llu *eLayerCache;
+	llu numLabels;
 	float cost;
-	int isLast;
-	int loopMin;
-	int loopMax;
+	llu isLast;
+	llu loopMin;
+	llu loopMax;
 	pthread_cond_t waitCond;
 	pthread_cond_t completeCond;
 	pthread_mutex_t mutex;
-	int workType;
+	llu workType;
 	//fmin params
 	float *x;
 	float *x0;
@@ -67,50 +67,50 @@ struct stData {
 	float sum2;
 	float sum3;
 	float p;
-	int size;
-	int end;
-	int isMain;
+	llu size;
+	llu end;
+	llu isMain;
 	float* calculatedDeltas;
-	int tloopmin;
+	llu tloopmin;
 };
 class NeuralNetwork {
 private:
-	int layerCount;
-	int *neuronCounts;
-	int numberOfLabels;
-	int ySize;
+	llu layerCount;
+	llu *neuronCounts;
+	llu numberOfLabels;
+	llu ySize;
 	float ySizefloat;
 	float yf;
 	float lyf;
 	float tyf;
-	int **dMatrixDimensions;
-	int *dLayerCache;
-	int *nLayerCache;
-	int *eLayerCache;
-	int dMatrixSize;
-	int neuronSize;
-	int errorSize;
-	int deltaSize;
-	int mDeltaSize;
+	llu **dMatrixDimensions;
+	llu *dLayerCache;
+	llu *nLayerCache;
+	llu *eLayerCache;
+	llu dMatrixSize;
+	llu neuronSize;
+	llu errorSize;
+	llu deltaSize;
+	llu mDeltaSize;
 
-	int xColumns;
+	llu xColumns;
 	float *xList;
 	float *yList;
-	int numberOfThreads;
+	unsigned long int numberOfThreads;
 
 	pthread_t *threads;
-	int threadBarrier;
+	llu threadBarrier;
 public:
 	struct stData *stDatas;
 	float  *deltas;
-	NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, int *neuronCounts);
+	NeuralNetwork(ApplicationParameters *params, float *alist, float *blist, llu *neuronCounts);
 	float calculateBackCostWithThetas(float *thetas);
 	static inline  void* calculateBackCost(void *dat);
 	static inline  void calculateCost(struct stData *data);
-	float* forwardPropogate(int aListIndex, float *tList, float *xList);
+	float* forwardPropogate(llu aListIndex, float *tList, float *xList);
 	void predict(float *tList, float *yTemp);
-	void predict(int rows, float *xlist, float *tList, float *yTemp);
-	void submitWork(int workType);
+	void predict(llu rows, float *xlist, float *tList, float *yTemp);
+	void submitWork(llu workType);
 	float* forwardPropogate(float *tList, float *xList);
 	static inline  void handleWork(stData *param);
 	virtual ~NeuralNetwork();
