@@ -85,7 +85,7 @@ public:
 	/*
 	 * Get momentum
 	 */
-	llu getLambda();
+	float getLambda();
 	/*
 	 * Get if user ask application to\n
 	 * do prediction after training complete

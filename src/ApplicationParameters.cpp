@@ -268,7 +268,7 @@ llu ApplicationParameters::getMaxIteration() {
 	return this->maxIteration;
 }
 
-llu ApplicationParameters::getLambda() {
+float ApplicationParameters::getLambda() {
 	return this->lambda;
 }
 
