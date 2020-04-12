@@ -408,14 +408,12 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 
 			llu previousLayer = nLayerCache[l];
 			bool isLast = l == (layerCount - 1);
-			llu lPrev = l - 1;
-			llu dCache = dlayerCache[l - 1];
-			llu nCounts = neuronCounts[lPrev] + 1;
-			llu siz = nCounts - (nCounts & 7);
+
+
 			llu neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
 			llu jPrev = 0;
 			llu row = 0;
-			float *n = &(neurons[nLayerCache[lPrev]]);
+
 
 			for (llu j = 0; j < neuronSize; j++) {
 				jPrev = j - 1;
@@ -427,6 +425,11 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				} else if (l == 0) {
 					neurons[row] = x[jPrev];
 				} else {
+					llu lPrev = l - 1;
+					llu dCache = dlayerCache[l - 1];
+					llu nCounts = neuronCounts[lPrev] + 1;
+					llu siz = nCounts - (nCounts & 7);
+					float *n = &(neurons[nLayerCache[lPrev]]);
 					float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
 					for (llu k = 0; k < siz; k = k + 8) {
 						neurons[row] += _mulAdd(&t[k], &n[k]);
