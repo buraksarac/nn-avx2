@@ -64,7 +64,7 @@ NeuralNetwork::NeuralNetwork(ApplicationParameters *params, float *alist, float 
 	tyf = params->getLambda() / (2.0f * ySizefloat);
 
 	stDatas = (struct stData*) malloc(sizeof(struct stData) * numberOfThreads);
-	threads = (pthread_t*) malloc(sizeof(pthread_t) * numberOfThreads - 1);
+	threads = (pthread_t*) malloc(sizeof(pthread_t) * (numberOfThreads - 1));
 	threadBarrier = params->getCpus() - numberOfThreads;
 
 	//we need rowcount in float value for calculation
