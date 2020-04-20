@@ -379,6 +379,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 	float *errors = (float*) malloc(sizeof(float) * data->errorSize);
 	data->cost = 0.0f;
 	llu dSize = data->deltaSize - (data->deltaSize & 7);
+	dSize = dSize < 8 ? 0 : dSize;
 	for (llu i = 0; i < dSize; i += 8) {
 		_mm256_storeu_ps(&(data->deltas[i]), zeros);
 	}
@@ -429,6 +430,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 					llu dCache = dlayerCache[l - 1];
 					llu nCounts = neuronCounts[lPrev] + 1;
 					llu siz = nCounts - (nCounts & 7);
+					siz = siz < 8 ? 0 : siz;
 					float *n = &(neurons[nLayerCache[lPrev]]);
 					float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
 					for (llu k = 0; k < siz; k = k + 8) {
@@ -465,6 +467,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 					float *e = &(errors[eCache]);
 					float *t = &(thetas[dCache]);
 					llu siz = nCounts - (nCounts & 3);
+					siz = siz < 4 ? 0 : siz;
 					llu val = dMatrixInfo[iNext][1];
 					float *t2 = &(t[j]);
 
@@ -501,6 +504,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			llu dCache = dlayerCache[i];
 			float *d = &(data->deltas[dCache]);
 			llu siz = n1 - (n1 & 7);
+			siz = siz < 8 ? 0 : siz;
 			for (llu j = 0; j < siz; j = j + 8) {
 				llu step = j * n2;
 				if (isLast) {
@@ -524,6 +528,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				float *d27 = &(d[step += n2]);
 				float *d28 = &(d[step += n2]);
 				llu size = n2 - (n2 & 7);
+				size = size < 8 ? 0 : size;
 				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d2[k], &eVal, &n[k]);
 					_mulAddBroadcast(&d22[k], &eVal2, &n[k]);
@@ -553,6 +558,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				float eVal = e[index];
 				float *d2 = &(d[n2 * a]);
 				llu size = n2 - (n2 & 7);
+				size = size < 8 ? 0 : size;
 				for (llu d = 0; d < size; d += 8) {
 					_mulAddBroadcast(&d2[d], &eVal, &n[d]);
 				}
@@ -810,6 +816,7 @@ float* NeuralNetwork::forwardPropogate(float *tList, float *xList) {
 				llu siz = nCounts - (nCounts & 7);
 				float *n = &(neurons[nLayerCache[lPrev]]);
 				float *t = &(tList[(dMatrixDimensions[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
+				siz = siz < 8 ? 0 : siz;
 				for (llu k = 0; k < siz; k = k + 8) {
 					neurons[row] += _mulAdd(&t[k], &n[k]);
 				}

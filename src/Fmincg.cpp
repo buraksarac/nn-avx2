@@ -93,7 +93,7 @@ GradientParameter* Fmincg::calculate(ApplicationParameters *params, llu thetaRow
 		fParam[t].s = &(s[loopmin]);
 		fParam[t].calculatedDeltas = &(neuralNetwork->deltas[loopmin]);
 		fParam[t].end = length;
-		fParam[t].size = length - (length & 7);
+		fParam[t].size = length < 8 ? 0 : length - (length & 7);
 		fParam[t].isMain = t == 0;
 		fParam[t].z1 = 0;
 		fParam[t].d1 = 0;
