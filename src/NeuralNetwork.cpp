@@ -378,8 +378,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 	float *neurons = (float*) malloc(sizeof(float) * data->neuronSize);
 	float *errors = (float*) malloc(sizeof(float) * data->errorSize);
 	data->cost = 0.0f;
-	llu dSize = data->deltaSize - (data->deltaSize & 7);
-	dSize = dSize < 8 ? 0 : dSize;
+	llu dSize = data->deltaSize < 8 ? 0 : data->deltaSize - (data->deltaSize & 7);
 	for (llu i = 0; i < dSize; i += 8) {
 		_mm256_storeu_ps(&(data->deltas[i]), zeros);
 	}
@@ -410,11 +409,9 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			llu previousLayer = nLayerCache[l];
 			bool isLast = l == (layerCount - 1);
 
-
 			llu neuronSize = isLast ? neuronCounts[l] : neuronCounts[l] + 1;
 			llu jPrev = 0;
 			llu row = 0;
-
 
 			for (llu j = 0; j < neuronSize; j++) {
 				jPrev = j - 1;
@@ -429,8 +426,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 					llu lPrev = l - 1;
 					llu dCache = dlayerCache[l - 1];
 					llu nCounts = neuronCounts[lPrev] + 1;
-					llu siz = nCounts - (nCounts & 7);
-					siz = siz < 8 ? 0 : siz;
+					llu siz = nCounts < 8 ? 0 : nCounts - (nCounts & 7);
 					float *n = &(neurons[nLayerCache[lPrev]]);
 					float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
 					for (llu k = 0; k < siz; k = k + 8) {
@@ -503,8 +499,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			llu isLast = i == layerCount - 2;
 			llu dCache = dlayerCache[i];
 			float *d = &(data->deltas[dCache]);
-			llu siz = n1 - (n1 & 7);
-			siz = siz < 8 ? 0 : siz;
+			llu siz = n1 < 8 ? 0 : n1 - (n1 & 7);
 			for (llu j = 0; j < siz; j = j + 8) {
 				llu step = j * n2;
 				if (isLast) {
@@ -527,8 +522,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				float *d26 = &(d[step += n2]);
 				float *d27 = &(d[step += n2]);
 				float *d28 = &(d[step += n2]);
-				llu size = n2 - (n2 & 7);
-				size = size < 8 ? 0 : size;
+				llu size = n2 < 8 ? 0 : n2 - (n2 & 7);
 				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d2[k], &eVal, &n[k]);
 					_mulAddBroadcast(&d22[k], &eVal2, &n[k]);
@@ -557,8 +551,7 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				llu index = isLast ? a : a + 1;
 				float eVal = e[index];
 				float *d2 = &(d[n2 * a]);
-				llu size = n2 - (n2 & 7);
-				size = size < 8 ? 0 : size;
+				llu size = n2 < 8 ? 0 : n2 - (n2 & 7);
 				for (llu d = 0; d < size; d += 8) {
 					_mulAddBroadcast(&d2[d], &eVal, &n[d]);
 				}
@@ -813,10 +806,9 @@ float* NeuralNetwork::forwardPropogate(float *tList, float *xList) {
 				llu lPrev = l - 1;
 				llu dCache = dLayerCache[l - 1];
 				llu nCounts = neuronCounts[lPrev] + 1;
-				llu siz = nCounts - (nCounts & 7);
+				llu siz = nCounts < 8 ? 0 : nCounts - (nCounts & 7);
 				float *n = &(neurons[nLayerCache[lPrev]]);
 				float *t = &(tList[(dMatrixDimensions[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
-				siz = siz < 8 ? 0 : siz;
 				for (llu k = 0; k < siz; k = k + 8) {
 					neurons[row] += _mulAdd(&t[k], &n[k]);
 				}
