@@ -404,7 +404,15 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 		float *y = &(yList[yCache]);
 
 		//forward propagate
-		for (llu l = 0; l < layerCount; l++) {
+		for (llu l = 0; l < layerCount - 1; l++) {
+			neurons[nLayerCache[l]] = 1;
+		}
+		llu neuronSize = neuronCounts[0];
+		float *n = &(neurons[1]);
+		for (llu nr = 0; nr < neuronSize; ++nr) {
+			n[nr] = x[nr];
+		}
+		for (llu l = 1; l < layerCount; l++) {
 
 			llu previousLayer = nLayerCache[l];
 			bool isLast = l == (layerCount - 1);
@@ -413,38 +421,38 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 			llu jPrev = 0;
 			llu row = 0;
 
-			for (llu j = 0; j < neuronSize; j++) {
+			for (llu j = !isLast; j < neuronSize; j++) {
 				jPrev = j - 1;
 				row = previousLayer + j;
 				neurons[row] = .0f;
 
-				if (j == 0 && !isLast) {
-					neurons[row] = 1;
-				} else if (l == 0) {
-					neurons[row] = x[jPrev];
-				} else {
-					llu lPrev = l - 1;
-					llu dCache = dlayerCache[l - 1];
-					llu nCounts = neuronCounts[lPrev] + 1;
-					llu siz = nCounts < 8 ? 0 : nCounts - (nCounts & 7);
-					float *n = &(neurons[nLayerCache[lPrev]]);
-					float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
-					for (llu k = 0; k < siz; k = k + 8) {
-						neurons[row] += _mulAdd(&t[k], &n[k]);
-					}
-					for (llu k = siz; k < nCounts; k++) {
-						neurons[row] = fma(t[k], n[k], neurons[row]);
-					}
-
-					neurons[row] = (UPPER_BOUND / (1 + pow(E, -neurons[row]))) + LOWER_BOUND;
+				llu lPrev = l - 1;
+				llu dCache = dlayerCache[l - 1];
+				llu nCounts = neuronCounts[lPrev] + 1;
+				llu siz = nCounts < 8 ? 0 : nCounts - (nCounts & 7);
+				float *n = &(neurons[nLayerCache[lPrev]]);
+				float *t = &(thetas[(dMatrixInfo[lPrev][1] * (isLast ? j : jPrev)) + dCache]);
+				for (llu k = 0; k < siz; k = k + 8) {
+					neurons[row] += _mulAdd(&t[k], &n[k]);
 				}
+				for (llu k = siz; k < nCounts; k++) {
+					neurons[row] = fma(t[k], n[k], neurons[row]);
+				}
+
+				neurons[row] = (UPPER_BOUND / (1 + pow(E, -neurons[row]))) + LOWER_BOUND;
 			}
 		}
 
 		//backpropagate
-		for (llu i = layerCount - 2; i >= 0; i--) {
+		neuronSize = neuronCounts[layerCount - 1];
+		n = &(neurons[nLayerCache[layerCount - 1]]);
+		float *e = &(errors[eLayerCache[layerCount - 2]]);
+		for (llu j = neuronSize - 1; j >= 0; j--) {
+			e[j] = n[j] - y[j];
+		}
+		for (llu i = layerCount - 3; i >= 0; i--) {
 			llu iNext = i + 1;
-			llu neuronSize = i == layerCount - 2 ? neuronCounts[iNext] : neuronCounts[iNext] + 1;
+			llu neuronSize = neuronCounts[iNext] + 1;
 			llu previousLayer = eLayerCache[i];
 			llu nCache = nLayerCache[iNext];
 
@@ -454,33 +462,28 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 
 				errors[row] = 0; //reset
 				float nVal = neurons[nCache + j];
-				if (i == layerCount - 2) {
-					errors[row] = nVal - y[j];
-				} else {
-					llu nCounts = neuronCounts[i + 2];
-					llu dCache = dlayerCache[iNext];
-					llu eCache = eLayerCache[iNext];
-					float *e = &(errors[eCache]);
-					float *t = &(thetas[dCache]);
-					llu siz = nCounts - (nCounts & 3);
-					siz = siz < 4 ? 0 : siz;
-					llu val = dMatrixInfo[iNext][1];
-					float *t2 = &(t[j]);
+				llu nCounts = neuronCounts[i + 2];
+				llu dCache = dlayerCache[iNext];
+				llu eCache = eLayerCache[iNext];
+				float *e = &(errors[eCache]);
+				float *t = &(thetas[dCache]);
+				llu siz = nCounts - (nCounts & 3);
+				siz = siz < 4 ? 0 : siz;
+				llu val = dMatrixInfo[iNext][1];
+				float *t2 = &(t[j]);
 
-					for (llu k = 0; k < siz; k = k + 4) {
-						errors[row] = fma(t2[val * k], e[k], errors[row]);
-						errors[row] = fma(t2[val * (k + 1)], e[k + 1], errors[row]);
-						errors[row] = fma(t2[val * (k + 2)], e[k + 2], errors[row]);
-						errors[row] = fma(t2[val * (k + 3)], e[k + 3], errors[row]);
-
-					}
-
-					for (llu a = siz; a < nCounts; a++) {
-						errors[row] = fma(t2[val * a], e[a], errors[row]);
-					}
-					errors[row] *= (nVal * (1 - nVal));
+				for (llu k = 0; k < siz; k = k + 4) {
+					errors[row] = fma(t2[val * k], e[k], errors[row]);
+					errors[row] = fma(t2[val * (k + 1)], e[k + 1], errors[row]);
+					errors[row] = fma(t2[val * (k + 2)], e[k + 2], errors[row]);
+					errors[row] = fma(t2[val * (k + 3)], e[k + 3], errors[row]);
 
 				}
+
+				for (llu a = siz; a < nCounts; a++) {
+					errors[row] = fma(t2[val * a], e[a], errors[row]);
+				}
+				errors[row] *= (nVal * (1 - nVal));
 
 			}
 		}
