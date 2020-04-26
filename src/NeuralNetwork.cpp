@@ -528,24 +528,51 @@ void NeuralNetwork::calculateCost(struct stData *data) {
 				llu size = n2 < 8 ? 0 : n2 - (n2 & 7);
 				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d2[k], &eVal, &n[k]);
+				}
+				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d22[k], &eVal2, &n[k]);
+				}
+				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d23[k], &eVal3, &n[k]);
+				}
+				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d24[k], &eVal4, &n[k]);
+				}
+				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d25[k], &eVal5, &n[k]);
+				}
+				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d26[k], &eVal6, &n[k]);
+				}
+				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d27[k], &eVal7, &n[k]);
+				}
+				for (llu k = 0; k < size; k = k + 8) {
 					_mulAddBroadcast(&d28[k], &eVal8, &n[k]);
 				}
 				for (llu d = size; d < n2; d++) {
-					float nVal = n[d];
-					d2[d] = fma(eVal, nVal, d2[d]);
-					d22[d] = fma(eVal2, nVal, d22[d]);
-					d23[d] = fma(eVal3, nVal, d23[d]);
-					d24[d] = fma(eVal4, nVal, d24[d]);
-					d25[d] = fma(eVal5, nVal, d25[d]);
-					d26[d] = fma(eVal6, nVal, d26[d]);
-					d27[d] = fma(eVal7, nVal, d27[d]);
-					d28[d] = fma(eVal8, nVal, d28[d]);
+					d2[d] = fma(eVal, n[d], d2[d]);
+				}
+				for (llu d = size; d < n2; d++) {
+					d22[d] = fma(eVal2, n[d], d22[d]);
+				}
+				for (llu d = size; d < n2; d++) {
+					d23[d] = fma(eVal3, n[d], d23[d]);
+				}
+				for (llu d = size; d < n2; d++) {
+					d24[d] = fma(eVal4, n[d], d24[d]);
+				}
+				for (llu d = size; d < n2; d++) {
+					d25[d] = fma(eVal5, n[d], d25[d]);
+				}
+				for (llu d = size; d < n2; d++) {
+					d26[d] = fma(eVal6, n[d], d26[d]);
+				}
+				for (llu d = size; d < n2; d++) {
+					d27[d] = fma(eVal7, n[d], d27[d]);
+				}
+				for (llu d = size; d < n2; d++) {
+					d28[d] = fma(eVal8, n[d], d28[d]);
 				}
 			}
 
